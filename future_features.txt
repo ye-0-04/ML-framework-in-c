@@ -1,1 +1,42 @@
-1) add a feature to allow addition of tensor of diff dimension sizes
+Math operations to implement
+Phase 1
+1) add  (DONE)
+2) sub  (DONE)
+3) mul  (Done)
+4) div  (Done)
+Phase 2 (Scalar operations)
+1) Scalar add  (Done)
+3) Scalar mul  (Done)
+Phase 3 tensor fill/copy utilities
+1)ones  (Done)
+2)random initializations (Done)
+3)copy   (Done)
+4)reshape (Done)
+5)transpose
+Phase 4
+1)Sum
+2)Max/min
+3)Mean
+4)Argmax
+Phase 5
+1)matrix mul
+2)broadcasting
+phase 6
+1)ReLu
+2)Sigmoid
+3)softmax
+Phase 7
+1)MSE
+2)Entropy
+
+Phase 7
+1)back prop
+
+
+
+
+
+
+
+
+***add a feature to allow addition of tensor of diff dimension sizes

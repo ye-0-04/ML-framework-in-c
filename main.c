@@ -7,5 +7,7 @@
 
 int main()
 {
+    double x = 1.0f / 0.0f;
+    printf("%f\n",x);
     return 0;
 }
