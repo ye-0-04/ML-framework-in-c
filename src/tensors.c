@@ -402,12 +402,16 @@ void transpose(tensor* a, int* shape ,int dims)
         printf("tensor doesnt exist\n");
         return NULL;
     }
-    int size = 0;
-    for (int i = 0; i < dims; i++)
-    {
-        size += shape[i];
-    }
+    
     
     
 
+}
+int compare(const void* a, const void* b) {
+    return *(int*)a - *(int*)b;
+}
+
+int check_shape(int* a, int* b)
+{
+    
 }
