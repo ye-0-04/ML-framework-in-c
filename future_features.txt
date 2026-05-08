@@ -12,12 +12,12 @@ Phase 3 tensor fill/copy utilities
 2)random initializations (Done)
 3)copy   (Done)
 4)reshape (Done)
-5)transpose
+5)transpose (Done)
 Phase 4
-1)Sum
-2)Max/min
-3)Mean
-4)Argmax
+1)Sum    (Done)
+2)Max/min (Done)
+3)Mean   (Done)
+4)Argmax (Done)
 Phase 5
 1)matrix mul
 2)broadcasting
@@ -31,6 +31,10 @@ Phase 7
 
 Phase 7
 1)back prop
+
+
+
+Parrallel programming -> threads or cuda
 
 
 

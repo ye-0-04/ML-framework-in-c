@@ -1,7 +1,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
+#include <math.h>
+#include <omp.h>
 
 #ifndef tensors_h
 #define tensors_h
@@ -18,8 +21,8 @@
  * - size: Total number of elements
  */
 typedef struct{
-    int* shape;
-    int* stride;
+    int* shape;  //[col, row, etc]
+    int* stride; //[col, row , etc]
     double *data;
     int dims;
     int size;
@@ -395,23 +398,174 @@ void reshape(tensor* a,int* shape, int dims)
     }
 }
 
-void transpose(tensor* a, int* shape ,int dims)
+void transpose(tensor* a, const int* swap_axes[2])
 {
     if (a==NULL)
     {
         printf("tensor doesnt exist\n");
         return NULL;
     }
-    
-    
-    
+    if (swap_axes[0] >= a->dims || swap_axes[1] >= a->dims)
+    {
+        printf("cant do operation , check axes numbers\n");
+        return ;
+    }
+    int x = swap_axes[0];
+    int y = swap_axes[1];
+    int z = a->shape[x];
+    a->shape[x] = a->shape[y];
+    a->shape[y] = z;
 
-}
-int compare(const void* a, const void* b) {
-    return *(int*)a - *(int*)b;
+    z = a->stride[x];
+    a->stride[x] = a->stride[y];
+    a->stride[y] = z;
 }
 
-int check_shape(int* a, int* b)
+double tensor_sum(tensor* a)
 {
-    
+    if (a == NULL)
+    {
+        printf("NULL tensor\n");
+        return 1;
+    }
+    #pragma omp parallel for reduction(+:sum)
+    double sum = 0;
+    for (int i = 0; i < a->size; i++)
+    {
+        if (isnan(a->data[i]) || isinf(a->data[i]))
+        {
+            continue;
+        }
+        sum += a->data[i];
+    }
+    return sum;
 }
+
+double tensor_get_max(tensor *a)
+{
+    if (a == NULL)
+    {
+        printf("NULL tensor\n");
+        return 1;
+    }
+    #pragma omp parallel for reduction(max:maxval)
+    double max = a->data[0];
+    for (int i = 0; i < a->size; i++)
+    {
+        if (isnan(a->data[i]) || isinf(a->data[i]))
+        {
+            continue;
+        }
+        if (a->data[i] > max) max = a->data[i];
+    }
+    return max;
+}
+
+double tensor_get_min(tensor* a)
+{
+    if (a == NULL)
+    {
+        printf("NULL tensor\n");
+        return 1;
+    }
+    #pragma omp parallel for reduction(min:minval)
+    double min = a->data[0];
+    for (int i = 0; i < a->size; i++)
+    {
+        if (isnan(a->data[i]) || isinf(a->data[i]))
+        {
+            continue;
+        }
+        if (a->data[i] < min) min = a->data[i];
+    }
+    return min;
+}
+
+double tensor_get_mean(tensor* a)
+{
+    if (a == NULL)
+    {
+        printf("NULL tensor\n");
+        return 1;
+    }
+    double sum = tensor_sum(a);
+    retrun (sum / a->size);
+
+}
+int tensor_argmax(tensor* a)
+{
+    if (a == NULL)
+    {
+        printf("NULL tensor\n");
+        return 1;
+    }
+    #pragma omp parallel for reduction(max:maxval)
+    double max = a->data[0];
+    int argmax = 0;
+    for (int i = 0; i < a->size; i++)
+    {
+        if (isnan(a->data[i]) || isinf(a->data[i]))
+        {
+            continue;
+        }
+        if (a->data[i] > max) argmax = i;
+    }
+    return argmax;
+}
+int tensor_argmin(tensor* a)
+{
+    if (a == NULL)
+    {
+        printf("NULL tensor\n");
+        return 1;
+    }
+    #pragma omp parallel for reduction(max:maxval)
+    double min = a->data[0];
+    int argmin = 0;
+    for (int i = 0; i < a->size; i++)
+    {
+        if (isnan(a->data[i]) || isinf(a->data[i]))
+        {
+            continue;
+        }
+        if (a->data[i] < min) argmin = i;
+    }
+    return argmin;
+}
+
+tensor* tensor_matmul(tensor* a, tensor* b)
+{
+    if (a->dims != b->dims)
+    {
+        printf("tensors arent equal in dims\n");
+        return 1;
+    }
+    if (a->shape[0] != b->shape[1])
+    {
+        printf("tensors arent compatible in size,cant perform matmul\n");
+        return 1;
+    }
+    int shape[a->dims];
+    shape[0] = a->shape[0];
+    shape[1] = b->shape[1];
+    for (int i = 1; i < a->dims; i++)
+    {
+        if (i == 1) continue;
+        if (a->shape[i] != b->shape[i])
+        {
+            printf("tensors dont have equal batch sizes\n");
+            return 1;
+        }
+        shape[i] = a->shape[i];
+    }
+    int size = a->shape[1] * b->shape[0];
+    tensor* result = create_tensor(shape, a->dims);
+    if (result == NULL)
+    {
+        print("Memory allocation failed\n");
+    }
+
+    
+
+}
+

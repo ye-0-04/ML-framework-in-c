@@ -59,14 +59,6 @@ void fill(tensor* a, double b);
 void rand_fill(tensor* a);
 
 /**
- * @brief Compares the size and dimensions of two tensors
- * @param a First tensor
- * @param b Second tensor
- * @return 0 if tensors have the same size, 1 otherwise
- */
-int comp_tensor_size(tensor* a, tensor* b);
-
-/**
  * @brief Copies data from one tensor to another (both must have same size)
  * @param a Destination tensor
  * @param b Source tensor
@@ -94,3 +86,23 @@ void scal_add(tensor* a, double b);
  * @param b Scalar value to multiply by
  */
 void scal_mul(tensor* a, double b);
+
+void transpose(tensor* a, const int* swap_axes[2]);
+
+double tensor_sum(tensor* a);
+
+double tensor_get_max(tensor* a);
+
+double tensor_get_min(tensor* a);
+
+double tensor_argmax(tensor* a);
+
+double tensor_argmin(tensor* a);
+
+/**
+ * @brief Compares the size and dimensions of two tensors
+ * @param a First tensor
+ * @param b Second tensor
+ * @return 0 if tensors have the same size, 1 otherwise
+ */
+int comp_tensor_size(tensor* a, tensor* b);
