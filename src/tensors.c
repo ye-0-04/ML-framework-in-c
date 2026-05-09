@@ -10,6 +10,8 @@
 #define tensors_h
 #endif
 
+#include <include/tensors.h>
+
 /**
  * @brief Tensor structure representing a multi-dimensional array
  * 
@@ -20,7 +22,7 @@
  * - dims: Number of dimensions
  * - size: Total number of elements
  */
-typedef struct{
+typedef struct tensor{
     int* shape;  //[col, row, etc]
     int* stride; //[col, row , etc]
     double *data;
@@ -38,7 +40,7 @@ typedef struct{
  * @param dims Number of dimensions (must be > 0)
  * @return Pointer to the created tensor, or NULL on failure
  */
-tensor* create_tensor(int* shape, int dims)
+tensor* create_tensor(int shape[], int dims)
 {
     int size = 1;
     if (dims <= 0)
@@ -48,11 +50,7 @@ tensor* create_tensor(int* shape, int dims)
     }
     for (int i = 0; i < dims; i++)
     {
-        if (shape[i] == NULL)
-        {
-            printf("shape doesnt match dimensions\n");
-            return NULL;
-        }
+
         if (shape[i] <= 0)
         {
             printf("shape contain an invalid number for a dimension\n");
@@ -72,7 +70,7 @@ tensor* create_tensor(int* shape, int dims)
     
     t->dims = dims;
     
-    t->stride = (int*)malloc(3*sizeof(int));
+    t->stride = (int*)malloc(dims *sizeof(int));
     if (t->stride == NULL)
     {
         printf("stride memory allocation failed\n");
@@ -89,11 +87,15 @@ tensor* create_tensor(int* shape, int dims)
         return NULL;
     }
     fill(t , 0.0);
-    t->stride = (int*)malloc(dims * sizeof(int));
-    if (t->stride == NULL)
+    t->shape = (int*)malloc(dims * sizeof(int));
+    if(t->shape == NULL)
     {
-        printf("stride memory allocation failed\n");
+        printf("memory allocation failed\n");
         return NULL;
+    }
+    for (int i = 0; i < dims; i++)
+    {
+        t->shape[i] = shape[i];
     }
     t->stride[0] = 1;
     for (int i = 1; i < dims; i++)
@@ -101,7 +103,7 @@ tensor* create_tensor(int* shape, int dims)
         t->stride[i] = shape[i-1] * t->stride[i-1];
     }
 
-
+    printf("tensor created sucessfully\n");
     return t;
 
 
@@ -109,7 +111,10 @@ tensor* create_tensor(int* shape, int dims)
 
 /**
  * @brief Compares the size and dimensions of two tensors
- * 
+ *
+ * Checks if two tensors have the same number of dimensions and the same
+ * size for each dimension.
+ *
  * @param a First tensor
  * @param b Second tensor
  * @return 0 if tensors have the same size, 1 otherwise
@@ -132,35 +137,89 @@ int comp_tensor_size(tensor* a, tensor *b)
     return 0;
 }
 
+/**
+ * @brief Frees all memory associated with a tensor
+ *
+ * Frees the shape, stride, and data arrays, then frees the tensor structure itself.
+ *
+ * @param a Tensor to free
+ */
 void free_tensor(tensor* a)
 {
     free(a->shape);
     free(a->stride);
     free(a->data);
-    free(a->dims);
-    free(a->size);
 }
 
-void print_tensor(tensor* a , int dims, int offset)
+/**
+ * @brief Gets the value at a specific index in the tensor's flat data array
+ *
+ * @param a Tensor to get value from
+ * @param index Position in the flat data array
+ * @return Value at the specified index
+ */
+double get_tensor_val(tensor* a, int index)
 {
-    if (dims == a->dims)
+    if (index > a->size)
     {
-        print("%d", a->data[offset]);
+        printf("index out of bounds\n");
+    }
+    return a->data[index];
+}
+
+/**
+ * @brief Sets the value at a specific index in the tensor's flat data array
+ *
+ * @param a Tensor to set value in
+ * @param val Value to set
+ * @param index Position in the flat data array
+ */
+void set_tensor_val(tensor* a, double val, int index)
+{
+    if (index > a->size)
+    {
+        printf("index out of bounds\n");
         return;
     }
-    printf("[");
-    for (int i =0; i < a->shape[dims]; i++)
-    {
-        print_tensor(a, dims + 1, offset + i * a->stride[dims]);
+    a->data[index] = val;
+}
 
-        if (i != a->shape[dims])
-        {
-            print(",");
-        }
+void print_tensor_rec(tensor* a, int dim, int offset)
+{
+    if (a == NULL)
+    {
+        printf("NULL pointer\n");
+        return;
     }
-    print("]");
-    
-    
+
+    if (dim == a->dims - 1)
+    {
+        printf("[");
+        for (int i = 0; i < a->shape[dim]; i++)
+        {
+            printf("%f", a->data[offset + i * a->stride[dim]]);
+            if (i != a->shape[dim] - 1)
+                printf(", ");
+        }
+        printf("]");
+        return;
+    }
+
+    printf("[");
+
+    for (int i = 0; i < a->shape[dim]; i++)
+    {
+        print_tensor_rec(
+            a,
+            dim + 1,
+            offset + i * a->stride[dim]
+        );
+
+        if (i != a->shape[dim] - 1)
+            printf(", ");
+    }
+
+    printf("]");
 }
 
 /**
@@ -257,7 +316,7 @@ tensor* mul(tensor* a,tensor* b)
  * @param b Second tensor (denominator)
  * @return New tensor with the result, or NULL on failure
  */
-tensor* div(tensor* a , tensor*b)
+tensor* tensor_div(tensor* a , tensor*b)
 {
     if (comp_tensor_size(a, b) == 1)
     {
@@ -284,12 +343,13 @@ tensor* div(tensor* a , tensor*b)
  * @param a Tensor to modify
  * @param b Scalar value to add
  */
-void scal_add(tensor* a , double b)
+int scal_add(tensor* a , double b)
 {
     for (int i = 0; i < a->size; i++)
     {
         a->data[i] = a->data[i] + b;
     }
+    return 0;
 }
 
 /**
@@ -298,12 +358,13 @@ void scal_add(tensor* a , double b)
  * @param a Tensor to modify
  * @param b Scalar value to multiply by
  */
-void scal_mul(tensor* a , double b)
+int scal_mul(tensor* a , double b)
 {
     for (int i = 0; i < a->size; i++)
     {
         a->data[i] = a->data[i] * b;
     }
+    return 0;
 }
 
 /**
@@ -312,13 +373,14 @@ void scal_mul(tensor* a , double b)
  * @param a Tensor to fill
  * @param b Value to fill with
  */
-void fill(tensor* a , double b)
+int fill(tensor* a , double b)
 {
     
     for (int i = 0; i < a->size; i++)
     {
         a->data[i] = b;
     }
+    return 0;
 }
 
 /**
@@ -329,13 +391,14 @@ void fill(tensor* a , double b)
  * 
  * @param a Tensor to fill
  */
-void rand_fill(tensor* a)
+int rand_fill(tensor* a)
 {
     srand(time(NULL));
     for (int i = 0; i < a->size; i++)
     {
         a->data[i] = (double)rand();
     }
+    return 0;
 }
 
 /**
@@ -347,17 +410,18 @@ void rand_fill(tensor* a)
  * @param a Destination tensor (modified in place)
  * @param b Source tensor
  */
-void copy(tensor* a, tensor* b)
+int copy(tensor* a, tensor* b)
 {
     if (comp_tensor_size(a, b))
     {
         printf("Two tensors aren't equal in size\n");
-        return;
+        return 1;
     }
     for (int i = 0; i < a->size; i++)
     {
         a->data[i] = b->data[i];
     }
+    return 0;
     
 }
 
@@ -371,7 +435,7 @@ void copy(tensor* a, tensor* b)
  * @param shape New shape array
  * @param dims New number of dimensions
  */
-void reshape(tensor* a,int* shape, int dims)
+int reshape(tensor* a,int* shape, int dims)
 {
     int size = 1;
     for (int i = 0; i < dims; i++)
@@ -379,14 +443,14 @@ void reshape(tensor* a,int* shape, int dims)
         if (shape[i] <= 0)
         {
             printf("invalid number in shape\n");
-            return;
+            return 1;
         }
         size = shape[i] * size;
     }
     if (size != a->size)
     {
         printf("tensor cant be reshaped into that size\n");
-        return;
+        return 1;
     }
     a->size = size;
     a->shape = shape;
@@ -396,19 +460,20 @@ void reshape(tensor* a,int* shape, int dims)
     {
         a->stride[i] = a->stride[i-1] * a->shape[i-1];
     }
+    return 0;
 }
 
-void transpose(tensor* a, const int* swap_axes[2])
+int transpose(tensor* a, int swap_axes[2])
 {
     if (a==NULL)
     {
         printf("tensor doesnt exist\n");
-        return NULL;
+        return 1;
     }
-    if (swap_axes[0] >= a->dims || swap_axes[1] >= a->dims)
+    if (swap_axes[0] >= a->dims || swap_axes[1] >= (int)a->dims)
     {
         printf("cant do operation , check axes numbers\n");
-        return ;
+        return 1;
     }
     int x = swap_axes[0];
     int y = swap_axes[1];
@@ -419,6 +484,7 @@ void transpose(tensor* a, const int* swap_axes[2])
     z = a->stride[x];
     a->stride[x] = a->stride[y];
     a->stride[y] = z;
+    return 0;
 }
 
 double tensor_sum(tensor* a)
@@ -489,10 +555,10 @@ double tensor_get_mean(tensor* a)
         return 1;
     }
     double sum = tensor_sum(a);
-    retrun (sum / a->size);
+    return (sum / a->size);
 
 }
-int tensor_argmax(tensor* a)
+double tensor_argmax(tensor* a)
 {
     if (a == NULL)
     {
@@ -512,7 +578,7 @@ int tensor_argmax(tensor* a)
     }
     return argmax;
 }
-int tensor_argmin(tensor* a)
+double tensor_argmin(tensor* a)
 {
     if (a == NULL)
     {
@@ -538,12 +604,12 @@ tensor* tensor_matmul(tensor* a, tensor* b)
     if (a->dims != b->dims)
     {
         printf("tensors arent equal in dims\n");
-        return 1;
+        return NULL;
     }
     if (a->shape[0] != b->shape[1])
     {
         printf("tensors arent compatible in size,cant perform matmul\n");
-        return 1;
+        return NULL;
     }
     int shape[a->dims];
     shape[0] = a->shape[0];
@@ -554,7 +620,7 @@ tensor* tensor_matmul(tensor* a, tensor* b)
         if (a->shape[i] != b->shape[i])
         {
             printf("tensors dont have equal batch sizes\n");
-            return 1;
+            return NULL;
         }
         shape[i] = a->shape[i];
     }
@@ -562,10 +628,42 @@ tensor* tensor_matmul(tensor* a, tensor* b)
     tensor* result = create_tensor(shape, a->dims);
     if (result == NULL)
     {
-        print("Memory allocation failed\n");
+        printf("Memory allocation failed\n");
     }
-
+    int number_of_batches = 1;
+    for (int i = 2; i < a->dims; i++)
+    {
+        number_of_batches *= a->shape[i];
+    }
     
 
+    int tensor_1_jump = a->shape[0] * a->shape[1];
+    int tensor_2_jump = b->shape[0] * b->shape[1];
+    
+
+    int result_index = 0;
+
+    for (int i = 0; i < number_of_batches; i++)
+    {
+
+        for (int row = 0; row < a->shape[1]; row++)  // row a
+        {
+            for (int col = 0; col < b->shape[0]; col++)  //col b
+            {
+                for (int k = 0; k < a->shape[0]; k++ ) //col a
+                {
+                    int a_col_index = i * tensor_1_jump + (((row + 1) * (k + 1)) * a->stride[0]);
+                    double a_val = a->data[a_col_index]; 
+
+                    int b_index = i * tensor_2_jump + (((k + 1) * (col + 1)) * b->stride[1]);
+                    double b_val = b->data[b_index];
+                    result->data[result_index] += a_val * b_val;
+                }
+
+                result_index ++;
+            }
+        }
+    }
+    return result;
 }
 
