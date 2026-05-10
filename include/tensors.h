@@ -73,7 +73,7 @@ int copy(tensor* a, tensor* b);
  * @param shape New shape array
  * @param dims New number of dimensions
  */
-int reshape(tensor* a, int* shape, int dims);
+int reshape(tensor* a, int shape[], int dims);
 
 /**
  * @brief Adds a scalar value to all elements of a tensor (in-place)
@@ -95,7 +95,7 @@ int scal_mul(tensor* a, double b);
  * @param swap_axes Array of 2 axis indices to swap
  * @return 0 on success, 1 on failure
  */
-int transpose(tensor* a, int swap_axes[2]);
+int transpose(tensor* a, int swap_axes[]);
 
 /**
  * @brief Computes the sum of all elements in a tensor
@@ -148,7 +148,7 @@ void print_tensor_rec(tensor* a, int dim, int offset);
  * @param index Position in the flat data array
  * @return Value at the specified index
  */
-double get_tensor_val(tensor* a, int index);
+const double get_tensor_val(tensor* a, int index);
 
 /**
  * @brief Sets the value at a specific index in the tensor's flat data array
@@ -157,3 +157,17 @@ double get_tensor_val(tensor* a, int index);
  * @param index Position in the flat data array
  */
 void set_tensor_val(tensor* a, double val, int index);
+
+void free_tensor(tensor* a);
+const int get_tensor_size(tensor* a);
+
+const int get_tensor_dims(tensor* a);
+
+const int* get_tensor_shape(tensor* a);
+const int* get_tensor_stride(tensor* a);
+int broadcast_compatible(tensor* a, tensor* b);
+tensor* tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double));
+double add(double x, double y);
+double sub(double x, double y);
+double mul(double x, double y);
+double div(double x, double y);

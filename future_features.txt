@@ -19,8 +19,8 @@ Phase 4
 3)Mean   (Done)
 4)Argmax (Done)
 Phase 5
-1)matrix mul
-2)broadcasting
+1)matrix mul  (Done)
+2)broadcasting (Done)
 phase 6
 1)ReLu
 2)Sigmoid
