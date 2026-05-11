@@ -22,12 +22,12 @@ Phase 5
 1)matrix mul  (Done)
 2)broadcasting (Done)
 phase 6
-1)ReLu
-2)Sigmoid
-3)softmax
+1)ReLu  (Done)
+2)Sigmoid  (Done)
+3)softmax  (Done)
 Phase 7
-1)MSE
-2)Entropy
+1)MSE  (Done)
+2)Entropy  (Done)
 
 Phase 7
 1)back prop

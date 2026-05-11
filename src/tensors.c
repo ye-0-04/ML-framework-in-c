@@ -284,7 +284,7 @@ tensor* add_tensor(tensor* a,tensor*b)
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor* sub(tensor* a,tensor *b)
+tensor* tensor_sub(tensor* a,tensor *b)
 {
     if (comp_tensor_size(a , b) == 1)
     {
@@ -313,7 +313,7 @@ tensor* sub(tensor* a,tensor *b)
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor* mul(tensor* a,tensor* b)
+tensor* tensor_mul(tensor* a,tensor* b)
 {
     if (comp_tensor_size(a, b) == 1)
     {
@@ -765,3 +765,57 @@ tensor* tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double
     return c;
 }
 
+double reLu(double x)
+{
+    return (x < 0.0) ? 0.0 : x;
+}
+
+double sigmoid(double x)
+{
+    return (1 / (1 + exp(-x)));
+}
+
+void softmax(double x[])
+{
+    int size = sizeof(x) / sizeof(x[0]);
+    double sum = 0.0;
+    for (int i = 0; i < size; i++)
+    {
+        x[i] = exp(x[i]);
+        sum += x[i];
+    }
+    for (int i = 0; i < size; i++)
+    {
+        x[i] /= sum;
+    }
+}
+
+double mean_squared_error(double true_val[], double predictions[])
+{
+    int true_val_size = sizeof(true_val) / sizeof(true_val[0]);
+    int predictions_size = sizeof(predictions) / sizeof(predictions[0]);
+
+    double squared_diff = 0.0;
+    double sum = 0.0;
+    double error = 0.0;
+    for (int i = 0; i < true_val_size; i++)
+    {
+        error = true_val[i] - predictions[i];
+        error = error * error;
+        sum += error / true_val_size;
+    }
+    return sum;
+}
+
+double entropy(double pred[])
+{
+    int size = sizeof(pred) / sizeof(pred[0]);
+    double sum = 0.0;
+    double x = 0;
+    for (int i = 0; i < size; i++)
+    {
+        sum += pred[i] * log(pred[i]);
+    }
+    if (sum < 0) sum *= -1;
+    return (sum < 0) ? (sum * -1) : sum;
+}

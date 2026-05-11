@@ -27,7 +27,7 @@ tensor* add_tensor(tensor* a, tensor* b);
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor* sub(tensor* a, tensor* b);
+tensor* tensor_sub(tensor* a, tensor* b);
 
 /**
  * @brief Performs element-wise multiplication of two tensors
@@ -35,7 +35,7 @@ tensor* sub(tensor* a, tensor* b);
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor* mul(tensor* a, tensor* b);
+tensor* tensor_mul(tensor* a, tensor* b);
 
 /**
  * @brief Performs element-wise division of two tensors
@@ -171,3 +171,8 @@ double add(double x, double y);
 double sub(double x, double y);
 double mul(double x, double y);
 double div(double x, double y);
+double reLu(double x);
+double sigmoid(double x);
+void softmax(double x[]);
+double mean_squared_error(double true_val[], double predictions[]);
+double entropy(double pred[]);
