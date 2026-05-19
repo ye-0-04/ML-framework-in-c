@@ -11,7 +11,7 @@ typedef struct tensor tensor;
  * @param dims Number of dimensions
  * @return Pointer to the created tensor, or NULL on failure
  */
-tensor* create_tensor(int shape[], int dims);
+tensor create_tensor(int shape[], int dims);
 
 /**
  * @brief Performs element-wise addition of two tensors
@@ -19,7 +19,7 @@ tensor* create_tensor(int shape[], int dims);
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor* add_tensor(tensor* a, tensor* b);
+tensor add_tensor(tensor* a, tensor* b);
 
 /**
  * @brief Performs element-wise subtraction of two tensors
@@ -27,7 +27,7 @@ tensor* add_tensor(tensor* a, tensor* b);
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor* tensor_sub(tensor* a, tensor* b);
+tensor tensor_sub(tensor* a, tensor* b);
 
 /**
  * @brief Performs element-wise multiplication of two tensors
@@ -35,7 +35,7 @@ tensor* tensor_sub(tensor* a, tensor* b);
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor* tensor_mul(tensor* a, tensor* b);
+tensor tensor_mul(tensor* a, tensor* b);
 
 /**
  * @brief Performs element-wise division of two tensors
@@ -43,9 +43,9 @@ tensor* tensor_mul(tensor* a, tensor* b);
  * @param b Second tensor (denominator)
  * @return New tensor with the result, or NULL on failure
  */
-tensor* tensor_div(tensor* a, tensor* b);
+tensor tensor_div(tensor* a, tensor* b);
 
-tensor* tensor_matmul(tensor* a, tensor* b);
+tensor tensor_matmul(tensor* a, tensor* b);
 
 /**
  * @brief Fills all elements of a tensor with a specified value
@@ -166,7 +166,7 @@ const int get_tensor_dims(tensor* a);
 const int* get_tensor_shape(tensor* a);
 const int* get_tensor_stride(tensor* a);
 int broadcast_compatible(tensor* a, tensor* b);
-tensor* tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double));
+tensor tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double));
 double add(double x, double y);
 double sub(double x, double y);
 double mul(double x, double y);

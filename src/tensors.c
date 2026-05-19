@@ -23,7 +23,7 @@
  * - size: Total number of elements
  */
 typedef struct tensor{
-    int* shape;  
+    int* shape;  //[[.....,row,col]
     int* stride; 
     double *data;
     int dims;
@@ -40,13 +40,13 @@ typedef struct tensor{
  * @param dims Number of dimensions (must be > 0)
  * @return Pointer to the created tensor, or NULL on failure
  */
-tensor* create_tensor(int shape[], int dims)
+tensor create_tensor(int shape[], int dims)
 {
     int size = 1;
     if (dims <= 0)
     {
         printf("invalid number of dimensions\n");
-        return NULL;
+        return;
     }
     for (int i = 0; i < dims; i++)
     {
@@ -54,54 +54,48 @@ tensor* create_tensor(int shape[], int dims)
         if (shape[i] <= 0)
         {
             printf("shape contain an invalid number for a dimension\n");
-            return NULL;
+            return;
         }
         size = shape[i] * size;
     }
     
-    tensor* t = (tensor*)malloc(sizeof(tensor));
-    if (t == NULL)
-    {
-        printf("Memory allocation failed\n");
-        
-        return NULL;
-    }
-    t->size = size;
+    tensor t;
+    t.size = size;
     
-    t->dims = dims;
+    t.dims = dims;
     
-    t->stride = (int*)malloc(dims *sizeof(int));
-    if (t->stride == NULL)
+    t.stride = (int*)malloc(dims *sizeof(int));
+    if (t.stride == NULL)
     {
         printf("stride memory allocation failed\n");
-        return NULL;
+        return ;
     }
 
     
     
-    t->data = (double*)malloc(size*sizeof(double));
-    if (t->data == NULL)
+    t.data = (double*)malloc(size*sizeof(double));
+    if (t.data == NULL)
     {
         printf("Memory allocation failed\n");
         
-        return NULL;
+        return;
     }
-    fill(t , 0.0);
-    t->shape = (int*)malloc(dims * sizeof(int));
-    if(t->shape == NULL)
+    fill(&t , 0.0);
+    t.shape = (int*)malloc(dims * sizeof(int));
+    if(t.shape == NULL)
     {
         printf("memory allocation failed\n");
-        return NULL;
+        return;
     }
     for (int i = 0; i < dims; i++)
     {
-        t->shape[i] = shape[i];
+        t.shape[i] = shape[i];
     }
 
-    t->stride[dims - 1] = 1;
+    t.stride[dims - 1] = 1;
     for (int i = dims - 2; i >= 0; i--)
     {
-        t->stride[i] = shape[i + 1] * t->stride[i + 1];
+        t.stride[i] = shape[i + 1] * t.stride[i + 1];
     }
 
     printf("tensor created sucessfully\n");
@@ -259,18 +253,18 @@ void print_tensor_rec(tensor* a, int dim, int offset)
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor* add_tensor(tensor* a,tensor*b)
+tensor add_tensor(tensor* a,tensor* b)
 {
     if (comp_tensor_size(a , b)==1)
     {
         printf("tensors aren't equal in size");
-        return NULL;
+        return;
     }
     
-    tensor* result = create_tensor(a->shape, a->dims);
+    tensor result = create_tensor(a->shape, a->dims);
     for (int i = 0; i < a->size; i++ )
     {
-        result->data[i] = a->data[i] + b->data[i];
+        result.data[i] = a->data[i] + b->data[i];
     }
     return result;
 }
@@ -284,22 +278,22 @@ tensor* add_tensor(tensor* a,tensor*b)
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor* tensor_sub(tensor* a,tensor *b)
+tensor tensor_sub(tensor* a,tensor *b)
 {
     if (comp_tensor_size(a , b) == 1)
     {
         printf("tensors aren't equal in size\n");
-        return NULL;
+        return ;
     }
-    tensor* result = create_tensor(a->shape, a->dims);
-    if (result == NULL)
+    tensor result = create_tensor(a->shape, a->dims);
+    if (&result == NULL)
     {
         printf("memory allocation failed\n");
-        return NULL;
+        return ;
     }
     for (int i = 0; i < a->size; i++)
     {
-        result->data[i] = a->data[i] - b->data[i];
+        result.data[i] = a->data[i] - b->data[i];
     }
     return result;
 }
@@ -313,23 +307,23 @@ tensor* tensor_sub(tensor* a,tensor *b)
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor* tensor_mul(tensor* a,tensor* b)
+tensor tensor_mul(tensor* a,tensor* b)
 {
     if (comp_tensor_size(a, b) == 1)
     {
         printf("tensors size aren't equal in size\n");
-        return NULL;
+        return;
     }
 
-    tensor* result = create_tensor(a->shape, a->dims);
-    if (result== NULL)
+    tensor result = create_tensor(a->shape, a->dims);
+    if (&result== NULL)
     {
         printf("memory allocation failed\n");
-        return NULL;
+        return;
     }
     for (int i = 0; i < a->size; i++)
     {
-        result->data[i] = a->data[i] * b->data[i];
+        result.data[i] = a->data[i] * b->data[i];
     }
     return result;
 }
@@ -344,23 +338,23 @@ tensor* tensor_mul(tensor* a,tensor* b)
  * @param b Second tensor (denominator)
  * @return New tensor with the result, or NULL on failure
  */
-tensor* tensor_div(tensor* a , tensor*b)
+tensor tensor_div(tensor* a , tensor*b)
 {
     if (comp_tensor_size(a, b) == 1)
     {
         printf("tensors size aren't equal in size\n");
-        return NULL;
+        return;
     }
 
-    tensor* result = create_tensor(a->shape, a->dims);
-    if (result== NULL)
+    tensor result = create_tensor(a->shape, a->dims);
+    if (&result== NULL)
     {
         printf("memory allocation failed\n");
-        return NULL;
+        return;
     }
     for (int i = 0; i < a->size; i++)
     {
-        result->data[i] = a->data[i] / b->data[i];
+        result.data[i] = a->data[i] / b->data[i];
     }
     return result;
 }
@@ -627,12 +621,12 @@ double tensor_argmin(tensor* a)
     return argmin;
 }
 
-tensor* tensor_matmul(tensor* a, tensor* b)
+tensor tensor_matmul(tensor* a, tensor* b)
 {
     if (a->dims != b->dims)
     {
         printf("dims mismatch\n");
-        return NULL;
+        return ;
     }
 
     int d = a->dims;
@@ -644,7 +638,7 @@ tensor* tensor_matmul(tensor* a, tensor* b)
     if (b->shape[d - 2] != K)
     {
         printf("inner dims mismatch\n");
-        return NULL;
+        return;
     }
 
     
@@ -655,8 +649,8 @@ tensor* tensor_matmul(tensor* a, tensor* b)
     shape[d - 2] = M;
     shape[d - 1] = N;
 
-    tensor* c = create_tensor(shape, d);
-    if (!c) return NULL;
+    tensor c = create_tensor(shape, d);
+    
 
     
     
@@ -669,7 +663,7 @@ tensor* tensor_matmul(tensor* a, tensor* b)
     {
         int batch_offset_a = bidx * a->stride[d - 3];
         int batch_offset_b = bidx * b->stride[d - 3];
-        int batch_offset_c = bidx * c->stride[d - 3];
+        int batch_offset_c = bidx * c.stride[d - 3];
 
         for (int i = 0; i < M; i++)
         {
@@ -694,10 +688,10 @@ tensor* tensor_matmul(tensor* a, tensor* b)
 
                 int c_idx =
                     batch_offset_c +
-                    i * c->stride[d - 2] +
-                    j * c->stride[d - 1];
+                    i * c.stride[d - 2] +
+                    j * c.stride[d - 1];
 
-                c->data[c_idx] = sum;
+                c.data[c_idx] = sum;
             }
         }
     }
@@ -725,17 +719,17 @@ int broadcast_compatible(tensor* a, tensor* b)
 
     return 1;
 }
-tensor* tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double))
+tensor tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double))
 {
     if (!broadcast_compatible(a, b))
     {
         printf("not broadcast compatible\n");
-        return NULL;
+        return;
     }
 
-    tensor* c = create_tensor(a->shape, a->dims);
+    tensor c = create_tensor(a->shape, a->dims);
 
-    for (int i = 0; i < c->size; i++)
+    for (int i = 0; i < c.size; i++)
     {
         int coord = i;
 
@@ -759,7 +753,7 @@ tensor* tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double
             tmp_a /= dim_a;
         }
 
-        c->data[i] = op(a->data[a_idx], b->data[b_idx]);
+        c.data[i] = op(a->data[a_idx], b->data[b_idx]);
     }
 
     return c;
