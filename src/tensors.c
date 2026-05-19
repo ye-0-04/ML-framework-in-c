@@ -5,6 +5,7 @@
 #include <time.h>
 #include <math.h>
 #include <omp.h>
+#include <stdbool.h>
 
 #ifndef tensors_h
 #define tensors_h
@@ -253,7 +254,7 @@ void print_tensor_rec(tensor* a, int dim, int offset)
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor add_tensor(tensor* a,tensor* b)
+tensor add_tensor(tensor* a,tensor* b, bool con )
 {
     if (comp_tensor_size(a , b)==1)
     {
@@ -266,7 +267,10 @@ tensor add_tensor(tensor* a,tensor* b)
     {
         result.data[i] = a->data[i] + b->data[i];
     }
+    if (con) free(a); free(b);
+
     return result;
+
 }
 
 /**
@@ -759,9 +763,13 @@ tensor tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double)
     return c;
 }
 
-double reLu(double x)
+void reLu(tensor* x)
 {
-    return (x < 0.0) ? 0.0 : x;
+    for (int i = 0;i < x->size;i++)
+    {
+        x->data[i] = (x->data[i] < 0.0) ? 0.0 : x->data[i];
+    }
+    
 }
 
 double sigmoid(double x)

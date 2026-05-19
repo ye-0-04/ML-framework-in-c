@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
  * @brief Forward declaration of tensor structure
@@ -19,7 +20,7 @@ tensor create_tensor(int shape[], int dims);
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor add_tensor(tensor* a, tensor* b);
+tensor add_tensor(tensor* a, tensor* b, bool con);
 
 /**
  * @brief Performs element-wise subtraction of two tensors
@@ -171,7 +172,7 @@ double add(double x, double y);
 double sub(double x, double y);
 double mul(double x, double y);
 double div(double x, double y);
-double reLu(double x);
+void reLu(tensor*  x);
 double sigmoid(double x);
 void softmax(double x[]);
 double mean_squared_error(double true_val[], double predictions[]);
