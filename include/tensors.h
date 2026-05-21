@@ -1,10 +1,19 @@
+#ifndef TENSORS_H
+#define TENSORS_H
+
 #include <stdint.h>
 #include <stdbool.h>
 
 /**
  * @brief Forward declaration of tensor structure
  */
-typedef struct tensor tensor;
+typedef struct tensor{
+    int* shape;  //[[.....,row,col]
+    int* stride; 
+    double *data;
+    int dims;
+    int size;
+}tensor;
 
 /**
  * @brief Creates a new tensor with the specified shape and dimensions
@@ -12,15 +21,16 @@ typedef struct tensor tensor;
  * @param dims Number of dimensions
  * @return Pointer to the created tensor, or NULL on failure
  */
-tensor create_tensor(int shape[], int dims);
+tensor* create_tensor(int shape[], int dims);
 
+void init_empty_tensor(tensor* a);
 /**
  * @brief Performs element-wise addition of two tensors
  * @param a First tensor
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor add_tensor(tensor* a, tensor* b, bool con);
+tensor* add_tensor(tensor* a, tensor* b, bool con);
 
 /**
  * @brief Performs element-wise subtraction of two tensors
@@ -28,7 +38,7 @@ tensor add_tensor(tensor* a, tensor* b, bool con);
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor tensor_sub(tensor* a, tensor* b);
+tensor* tensor_sub(tensor* a, tensor* b);
 
 /**
  * @brief Performs element-wise multiplication of two tensors
@@ -36,7 +46,7 @@ tensor tensor_sub(tensor* a, tensor* b);
  * @param b Second tensor
  * @return New tensor with the result, or NULL on failure
  */
-tensor tensor_mul(tensor* a, tensor* b);
+tensor* tensor_mul(tensor* a, tensor* b);
 
 /**
  * @brief Performs element-wise division of two tensors
@@ -44,22 +54,22 @@ tensor tensor_mul(tensor* a, tensor* b);
  * @param b Second tensor (denominator)
  * @return New tensor with the result, or NULL on failure
  */
-tensor tensor_div(tensor* a, tensor* b);
+tensor* tensor_div(tensor* a, tensor* b);
 
-tensor tensor_matmul(tensor* a, tensor* b);
+tensor* tensor_matmul(tensor* a, tensor* b);
 
 /**
  * @brief Fills all elements of a tensor with a specified value
  * @param a Tensor to fill
  * @param b Value to fill with
  */
-int fill(tensor* a, double b);
+void fill(tensor* a, double b);
 
 /**
  * @brief Fills all elements of a tensor with random double values
  * @param a Tensor to fill
  */
-int rand_fill(tensor* a);
+void rand_fill(tensor* a);
 
 /**
  * @brief Copies data from one tensor to another (both must have same size)
@@ -81,14 +91,14 @@ int reshape(tensor* a, int shape[], int dims);
  * @param a Tensor to modify
  * @param b Scalar value to add
  */
-int scal_add(tensor* a, double b);
-
+void scal_add(tensor* a, double b);
+void scal_pow(tensor*a, int b);
 /**
  * @brief Multiplies all elements of a tensor by a scalar value (in-place)
  * @param a Tensor to modify
  * @param b Scalar value to multiply by
  */
-int scal_mul(tensor* a, double b);
+void scal_mul(tensor* a, double b);
 
 /**
  * @brief Transposes a tensor by swapping two axes
@@ -96,7 +106,7 @@ int scal_mul(tensor* a, double b);
  * @param swap_axes Array of 2 axis indices to swap
  * @return 0 on success, 1 on failure
  */
-int transpose(tensor* a, int swap_axes[]);
+void transpose(tensor* a, int swap_axes[]);
 
 /**
  * @brief Computes the sum of all elements in a tensor
@@ -167,13 +177,19 @@ const int get_tensor_dims(tensor* a);
 const int* get_tensor_shape(tensor* a);
 const int* get_tensor_stride(tensor* a);
 int broadcast_compatible(tensor* a, tensor* b);
-tensor tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double));
+tensor* tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double));
 double add(double x, double y);
 double sub(double x, double y);
 double mul(double x, double y);
-double div(double x, double y);
+double div_2(double x, double y);
 void reLu(tensor*  x);
 double sigmoid(double x);
-void softmax(double x[]);
-double mean_squared_error(double true_val[], double predictions[]);
-double entropy(double pred[]);
+void softmax(tensor *x);
+double mean_squared_error(double true_val[],int true_val_size, double predictions[], int predictions_size);
+double entropy(double pred[],int size);
+void clone(tensor* a, tensor* b);
+void scal_tensor_add(tensor* a, tensor* b);
+void scal_tensor_sub(tensor* a, tensor* b);
+void scal_tensor_mul(tensor* a, tensor* b);
+
+#endif
