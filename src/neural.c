@@ -69,13 +69,16 @@ void forward_pass(neural_network *nt, tensor* input)
         scal_tensor_add(&nt->layers[i].output, &nt->layers[i].bias);
         if (i == nt->size - 1)
         {
-            softmax(&nt->layers[nt->size-1].output);
+            // softmax(&nt->layers[nt->size-1].output);
+            sigmoid(&nt->layers[nt->size-1].output);
         }
         else
         {
             reLu(&nt->layers[i].output);
             clone(&nt->layers[i+1].input , &nt->layers[i].output);
         }
+        printf("layer number %d\n", i);
+        print_tensor_values(&nt->layers[i].weights);
     }
 
 }
@@ -176,7 +179,7 @@ void backprop_v2(neural_network *nt, tensor* correct_output, double l_r)
         
         tensor* m = tensor_matmul(&r, &clone_input);  //delta x input
         scal_mul(m, l_r);  //delta x input x learning rate
-        tensor_sub(&nt->layers[i].weights, m);
+        scal_tensor_sub(&nt->layers[i].weights, m);
         
         // FIX 3: Free all local tensors to prevent memory leaks
         free_tensor(m);

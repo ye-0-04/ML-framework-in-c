@@ -183,7 +183,7 @@ double sub(double x, double y);
 double mul(double x, double y);
 double div_2(double x, double y);
 void reLu(tensor*  x);
-double sigmoid(double x);
+void sigmoid(tensor* x);
 void softmax(tensor *x);
 double mean_squared_error(double true_val[],int true_val_size, double predictions[], int predictions_size);
 double entropy(double pred[],int size);
@@ -191,5 +191,5 @@ void clone(tensor* a, tensor* b);
 void scal_tensor_add(tensor* a, tensor* b);
 void scal_tensor_sub(tensor* a, tensor* b);
 void scal_tensor_mul(tensor* a, tensor* b);
-
+void print_tensor_values(tensor* a);
 #endif

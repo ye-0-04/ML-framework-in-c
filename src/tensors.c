@@ -802,9 +802,13 @@ void reLu(tensor* x)
     
 }
 
-double sigmoid(double x)
+void sigmoid(tensor* x)
 {
-    return (1 / (1 + exp(-x)));
+    
+    for (int i = 0;i < x->size;i++)
+    {
+        x->data[i] = (1 / (1 + exp(x->data[i])));
+    }
 }
 
 void softmax(tensor *x)
@@ -872,4 +876,14 @@ void clone(tensor* a, tensor* b)
     for (int i = 0; i < a->size; i++) {
         a->data[i] = b->data[i];
     }
+}
+void print_tensor_values(tensor* a)
+{
+    printf("[");
+    for (int i = 0; i < a->size; i++)
+    {
+
+        printf("%i,", get_tensor_val(a, i));
+    }
+    printf("]\n");
 }
