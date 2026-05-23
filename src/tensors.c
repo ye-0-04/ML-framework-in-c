@@ -76,7 +76,7 @@ tensor* create_tensor(int shape[], int dims)
     }
     
     fill(t, 0.0);
-    printf("tensor created successfully (size=%d)\n", size);
+    // printf("tensor created successfully (size=%d)\n", size);
     return t;
 }
 
@@ -452,7 +452,7 @@ void rand_fill(tensor* a)
     
     for (int i = 0; i < a->size; i++)
     {
-        a->data[i] = (double)rand() / RAND_MAX;
+        a->data[i] = ((double)rand() / RAND_MAX - 0.5) * 0.01;
     }
     
 }
@@ -814,12 +814,21 @@ void sigmoid(tensor* x)
 void softmax(tensor *x)
 {
     int size = x->size;
+
+    double max = x->data[0];
+    for (int i = 1; i < size; i++)
+    {
+        if (x->data[i] > max)
+            max = x->data[i];
+    }
+
     double sum = 0.0;
     for (int i = 0; i < size; i++)
     {
-        x->data[i] = exp(x->data[i]);
+        x->data[i] = exp(x->data[i] - max);
         sum += x->data[i];
     }
+
     for (int i = 0; i < size; i++)
     {
         x->data[i] /= sum;
@@ -883,7 +892,42 @@ void print_tensor_values(tensor* a)
     for (int i = 0; i < a->size; i++)
     {
 
-        printf("%i,", get_tensor_val(a, i));
+        printf("%f,", get_tensor_val(a, i));
     }
     printf("]\n");
+}
+tensor load_tensor(FILE *f)
+{
+    tensor t;
+
+    fread(&t.dims, sizeof(int), 1, f);
+    fread(&t.size, sizeof(int), 1, f);
+
+    t.shape = malloc(sizeof(int) * t.dims);
+    t.stride = malloc(sizeof(int) * t.dims);
+    t.data = malloc(sizeof(double) * t.size);
+
+
+    fread(t.shape, sizeof(int), t.dims, f);
+    fread(t.stride, sizeof(int), t.dims, f);
+    fread(t.data, sizeof(double), t.size, f);
+
+    return t;
+}
+
+int tensor_argmax_index(tensor *t)
+{
+    int idx = 0;
+    double max = t->data[0];
+
+    for (int i = 1; i < t->size; i++)
+    {
+        if (t->data[i] > max)
+        {
+            max = t->data[i];
+            idx = i;
+        }
+    }
+
+    return idx;
 }

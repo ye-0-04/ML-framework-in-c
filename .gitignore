@@ -1,0 +1,27 @@
+# Generated MNIST datasets
+mnist_*.bin
+mnist_*.npy
+*.npy
+
+# Downloaded MNIST cache/raw files
+preprocess/MNIST/
+preprocess/*.idx*-ubyte
+
+# npm dependencies and generated npm files
+node_modules/
+.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Generated binaries/build outputs
+*.exe
+*.o
+*.obj
+*.out
+build/
+
+# Generated binary model/test artifacts
+*_net.bin
+tests/model.bin

@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 #include "../include/neural.h"
-
-
+#include "../include/tensors.h"
+#include "../include/models.h"
 int main()
 {
     printf("hello\n");
@@ -24,18 +24,22 @@ int main()
     target->data[0] = 1.0;
     target->data[1] = 1.0;
     target->data[2] = 1.0;
-    for (int epoch = 0; epoch < 100000; epoch++)
-    {
+    FILE *f = fopen("model.bin", "wb");
+    save_model(&net, "model.bin");
+    neural_network net_v2;
+    load_model(&net_v2, "model.bin");
+    // for (int epoch = 0; epoch < 100000; epoch++)
+    // {
         
         
-        forward_pass(&net, input);
-        backprop_v2(&net, target, 0.0001);
-        for (int i = 0; i < 3; i++)
-        {
-            printf("%f,", get_tensor_val(&net.layers[net.size-1].output, i));
-        }
-        printf("\n");
-    }
+    //     forward_pass(&net, input);
+    //     backprop_v2(&net, target, 0.0001);
+    //     for (int i = 0; i < 3; i++)
+    //     {
+    //         printf("%f,", get_tensor_val(&net.layers[net.size-1].output, i));
+    //     }
+    //     printf("\n");
+    // }
 
     
 

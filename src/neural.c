@@ -43,48 +43,48 @@ neural_network create_net(int neural_shape[], int input, int size)
     nt.layers[0] = create_layer(input, neural_shape[0]);
     for (int i = 1; i < size; i++)
     {
-        printf("create layer %i \n", i);
+        // printf("create layer %i \n", i);
         nt.layers[i] = create_layer(neural_shape[i-1], neural_shape[i]);
-        printf("created layer %i \n", i);
+        // printf("created layer %i \n", i);
     }
     nt.size = size;
     return nt;
 }
 void forward_pass(neural_network *nt, tensor* input)
 {   
-    printf("hello forward\n");
+    // printf("hello forward\n");
     clone(&nt->layers[0].input, input);
     for (int i = 0; i < nt->size; i++)
     {
-        printf("Layer %d: weights shape [%d,%d,%d], input shape [%d,%d,%d]\n", i,
-        nt->layers[i].weights.shape[0],
-        nt->layers[i].weights.shape[1],
-        nt->layers[i].weights.shape[2],
-        nt->layers[i].input.shape[0],
-        nt->layers[i].input.shape[1],
-        nt->layers[i].input.shape[2]);
+        // printf("Layer %d: weights shape [%d,%d,%d], input shape [%d,%d,%d]\n", i,
+        // nt->layers[i].weights.shape[0],
+        // nt->layers[i].weights.shape[1],
+        // nt->layers[i].weights.shape[2],
+        // nt->layers[i].input.shape[0],
+        // nt->layers[i].input.shape[1],
+        // nt->layers[i].input.shape[2]);
         tensor* x = tensor_matmul(&nt->layers[i].weights, &nt->layers[i].input);
         clone(&nt->layers[i].output, x);
         free_tensor(x);
         scal_tensor_add(&nt->layers[i].output, &nt->layers[i].bias);
         if (i == nt->size - 1)
         {
-            // softmax(&nt->layers[nt->size-1].output);
-            sigmoid(&nt->layers[nt->size-1].output);
+            softmax(&nt->layers[nt->size-1].output);
+            // sigmoid(&nt->layers[nt->size-1].output);
         }
         else
         {
             reLu(&nt->layers[i].output);
             clone(&nt->layers[i+1].input , &nt->layers[i].output);
         }
-        printf("layer number %d\n", i);
-        print_tensor_values(&nt->layers[i].weights);
+        // printf("layer number %d\n", i);
+        // print_tensor_values(&nt->layers[i].weights);
     }
 
 }
 void backprop(neural_network *nt, tensor* correct_output, double l_r)
 {
-    printf("hello_backprop\n");
+    // printf("hello_backprop\n");
     //step one -> calculate the error between actual answer and our prediction
     tensor* delta = tensor_sub(correct_output, &nt->layers[nt->size-1].output);
     
@@ -132,9 +132,9 @@ void backprop(neural_network *nt, tensor* correct_output, double l_r)
 }
 void backprop_v2(neural_network *nt, tensor* correct_output, double l_r)
 {
-    printf("hello_backprop\n");
+    // printf("hello_backprop\n");
     //step one -> calculate the error between actual answer and our prediction
-    tensor* delta = tensor_sub(correct_output, &nt->layers[nt->size-1].output);
+    tensor* delta = tensor_sub(&nt->layers[nt->size-1].output, correct_output);
     
     clone(&nt->layers[nt->size-1].gradient , delta);
     free_tensor(delta);
@@ -142,9 +142,14 @@ void backprop_v2(neural_network *nt, tensor* correct_output, double l_r)
     for (int i = nt->size-1; i >= 0; i--)
     {
         // FIX 1: Apply ReLU derivative BEFORE matmul (moved up)
-        for (int j = 0; j < nt->layers[i].gradient.size; j++) {
-            if (nt->layers[i].output.data[j] == 0.0)
-                nt->layers[i].gradient.data[j] = 0.0;
+        // Apply ReLU derivative only to hidden layers, not the final softmax layer
+        if (i != nt->size - 1)
+        {
+            for (int j = 0; j < nt->layers[i].gradient.size; j++)
+            {
+                if (nt->layers[i].output.data[j] == 0.0)
+                    nt->layers[i].gradient.data[j] = 0.0;
+            }
         }
 
         tensor weighted_tensor_transposed;

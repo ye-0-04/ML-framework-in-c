@@ -1,59 +1,75 @@
 # ML Framework in C - Documentation
 
-## Project Overview
-A lightweight tensor library for machine learning operations written in C.
+This folder documents the current project structure, tensor API, neural network API, model serialization, MNIST preprocessing, and debugging workflow.
 
-## File Structure
+## Documentation Map
 
-```
+- [Tensor API](tensor-api.md): tensor structure, tensor creation, math operations, reductions, activations, and memory rules.
+- [Neural Network API](neural-api.md): layers, networks, forward pass, backpropagation, shapes, and training flow.
+- [Model and Data Files](model-and-data.md): model save/load format, MNIST `.bin` files, preprocessing scripts, and file expectations.
+- [Debugging Guide](debugging-guide.md): fast tests for one-sample overfitting, evaluation sanity checks, and common failure modes.
+- [Getting Started](getting-started.md): step-by-step guide for generating data, compiling, training, and evaluating.
+
+## Project Layout
+
+```text
 ML-framework-in-c/
-├── main.c              # Main entry point (placeholder)
-├── include/
-│   └── tensors.h       # Header file with function declarations
-├── src/
-│   └── tensors.c       # Implementation of tensor operations
-└── documentation/
-    ├── README.md       # This file
-    └── tensor-api.md   # Detailed API documentation
+|-- main.c                  # Train/evaluate entry point used while experimenting
+|-- debug_one_sample.c      # Tiny overfit test for checking whether learning works
+|-- debug_eval.c            # Evaluation sanity-check tool for saved models
+|-- include/
+|   |-- tensors.h           # Tensor API declarations
+|   |-- neural.h            # Neural network API declarations
+|   `-- models.h            # Model save/load declarations
+|-- src/
+|   |-- tensors.c           # Tensor operations, activations, losses, helpers
+|   |-- neural.c            # Layer/network creation, forward pass, backprop
+|   `-- models.c            # Binary model serialization
+|-- preprocess/
+|   |-- data_prerocess.py   # Downloads/prepares normalized MNIST training arrays
+|   |-- to_bin.py           # Converts training `.npy` arrays to raw `.bin`
+|   `-- fetch_test.py       # Downloads/prepares normalized MNIST test `.bin` files
+`-- documentation/
+    |-- README.md
+    |-- tensor-api.md
+    |-- neural-api.md
+    |-- model-and-data.md
+    `-- debugging-guide.md
 ```
 
-## Features
+## Build Commands
 
-- **Tensor Creation**: Create multi-dimensional tensors with custom shapes
-- **Element-wise Operations**: Addition, subtraction, multiplication, division
-- **Scalar Operations**: Add or multiply tensor by a scalar value
-- **Utilities**: Fill tensor with value or random numbers, copy, reshape
-- **Validation**: Size and dimension checking for tensor operations
+Compile the main experiment program:
 
-## Building
-
-Compile with a C compiler:
-```bash
-gcc -o main main.c src/tensors.c -Iinclude
+```powershell
+gcc -O2 main.c src/tensors.c src/neural.c src/models.c -o tes.exe -Iinclude
 ```
 
-## Quick Start
+Compile the one-sample learning test:
 
-```c
-#include "tensors.h"
-
-// Create a 2x3 tensor
-int shape[] = {2, 3};
-tensor* t = create_tensor(shape, 2);
-
-// Fill with zeros
-fill(t, 0.0);
-
-// Fill with random values
-rand_fill(t);
-
-// Reshape to 3x2
-reshape(t, (int[]){3, 2}, 2);
+```powershell
+gcc -O2 debug_one_sample.c src/tensors.c src/neural.c src/models.c -o debug_one_sample.exe -Iinclude
 ```
 
-## Notes
+Compile the evaluation checker:
 
-- All element-wise operations create new tensors (not in-place)
-- Scalar operations modify tensors in-place
-- Division by zero is not checked - user must ensure valid inputs
-- Memory management is manual - users are responsible for freeing tensors
+```powershell
+gcc -O2 debug_eval.c src/tensors.c src/neural.c src/models.c -o debug_eval.exe -Iinclude
+```
+
+## Current Scope
+
+Implemented:
+
+- Multi-dimensional tensor allocation and shape/stride tracking.
+- Element-wise tensor math and in-place tensor math.
+- Batched-style matrix multiplication for tensors shaped like `[batch, rows, cols]`.
+- ReLU, sigmoid, softmax, MSE, and entropy helpers.
+- Simple feed-forward dense networks.
+- Backpropagation for softmax output and ReLU hidden layers.
+- Binary save/load for trained networks.
+- MNIST preprocessing and debugging harnesses.
+
+Important limitation:
+
+- Memory management is manual. Every tensor allocation or clone that owns heap memory must eventually be freed.

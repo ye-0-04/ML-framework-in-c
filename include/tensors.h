@@ -1,6 +1,7 @@
 #ifndef TENSORS_H
 #define TENSORS_H
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -192,4 +193,7 @@ void scal_tensor_add(tensor* a, tensor* b);
 void scal_tensor_sub(tensor* a, tensor* b);
 void scal_tensor_mul(tensor* a, tensor* b);
 void print_tensor_values(tensor* a);
+
+tensor load_tensor(FILE *f);
+int tensor_argmax_index(tensor *t);
 #endif
