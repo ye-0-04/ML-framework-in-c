@@ -1,10 +1,10 @@
 # ML-framework-in-c
 
-A lightweight machine learning framework implemented from scratch in C. The project is focused on learning how tensors, dense layers, forward passes, backpropagation, model serialization, and MNIST-style training work under the hood.
+A lightweight machine learning framework implemented from scratch in C. The project is focused on learning how tensors, dense layers, forward passes, backpropagation, and model serialization work under the hood.
 
 ## Overview
 
-The framework provides a small tensor library and a simple feed-forward neural network stack. It can create dense networks, train them with backpropagation, save/load model weights, and run MNIST classification experiments using preprocessed binary data.
+The framework provides a small tensor library and a multilayer perceptron implementation. It can create dense networks with different shapes, run tensor operations, train with backpropagation, and save/load model weights. MNIST is currently used as an example dataset for testing the framework, not as a fixed pipeline or the only supported use case.
 
 ## Features
 
@@ -21,7 +21,7 @@ The framework provides a small tensor library and a simple feed-forward neural n
 - Forward pass for feed-forward classification networks.
 - Backpropagation with softmax output and ReLU hidden layers.
 - Binary model save/load support.
-- MNIST preprocessing scripts and debug harnesses.
+- Example preprocessing scripts and debug harnesses used for MNIST experiments.
 
 ## Directory Structure
 
@@ -36,9 +36,9 @@ ML-framework-in-c/
 |   |-- neural.c           # Dense layers, forward pass, and backprop
 |   `-- models.c           # Binary model serialization
 |-- preprocess/
-|   |-- data_prerocess.py  # Prepare MNIST training arrays
+|   |-- data_prerocess.py  # Example script for preparing MNIST training arrays
 |   |-- to_bin.py          # Convert training arrays to raw binary files
-|   `-- fetch_test.py      # Prepare MNIST test binary files
+|   `-- fetch_test.py      # Example script for preparing MNIST test binary files
 |-- documentation/         # Project guides and API docs
 |-- tests/                 # C test experiments
 |-- main.c                 # Main training/evaluation experiment file
@@ -69,7 +69,7 @@ gcc -O2 debug_eval.c src/tensors.c src/neural.c src/models.c -o debug_eval.exe -
 
 ## Quick Start
 
-Generate MNIST data:
+Generate example MNIST data:
 
 ```powershell
 python preprocess\data_prerocess.py
@@ -89,7 +89,7 @@ Run the main experiment:
 .\tes.exe
 ```
 
-Generated MNIST files and model artifacts are intentionally ignored by Git.
+Generated dataset files and model artifacts are intentionally ignored by Git.
 
 ## Documentation
 
