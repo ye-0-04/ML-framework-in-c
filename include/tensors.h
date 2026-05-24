@@ -9,7 +9,7 @@
 typedef struct tensor{
     int* shape;  //[[.....,row,col]
     int* stride; 
-    double *data;
+    float *data;
     int dims;
     int size;
 }tensor;
@@ -31,38 +31,35 @@ tensor* tensor_div(tensor* a, tensor* b);
 
 tensor* tensor_matmul(tensor* a, tensor* b);
 
-tensor* tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double));
+tensor* tensor_apply_broadcast(tensor* a, tensor* b, float (*op)(float, float));
 
 tensor load_tensor(FILE *f);
 
-double tensor_sum(tensor* a);
+float tensor_sum(tensor* a);
 
 
-double tensor_get_max(tensor* a);
+float tensor_get_max(tensor* a);
 
 
-double tensor_get_min(tensor* a);
+float tensor_get_min(tensor* a);
 
+float add(float x, float y);
 
-double tensor_argmax(tensor* a);
+float sub(float x, float y);
 
+float mul(float x, float y);
 
-double tensor_argmin(tensor* a);
+float div_2(float x, float y);
 
-double add(double x, double y);
+float mean_squared_error(float true_val[],int true_val_size, float predictions[], int predictions_size);
 
-double sub(double x, double y);
+float entropy(float pred[],int size);
 
-double mul(double x, double y);
+const float get_tensor_val(tensor* a, int index);
 
-double div_2(double x, double y);
+int tensor_argmax(tensor* a);
 
-double mean_squared_error(double true_val[],int true_val_size, double predictions[], int predictions_size);
-
-double entropy(double pred[],int size);
-
-const double get_tensor_val(tensor* a, int index);
-
+int tensor_argmin(tensor* a);
 
 int copy(tensor* a, tensor* b);
 
@@ -84,24 +81,24 @@ const int* get_tensor_shape(tensor* a);
 const int* get_tensor_stride(tensor* a);
 
 
-void fill(tensor* a, double b);
+void fill(tensor* a, float b);
 
 
 void rand_fill(tensor* a);
 
-void scal_add(tensor* a, double b);
+void scal_add(tensor* a,float b);
 
 void scal_pow(tensor*a, int b);
 
 
-void scal_mul(tensor* a, double b);
+void scal_mul(tensor* a, float b);
 
 
 void transpose(tensor* a, int swap_axes[]);
 
 void print_tensor_rec(tensor* a, int dim, int offset);
 
-void set_tensor_val(tensor* a, double val, int index);
+void set_tensor_val(tensor* a, float val, int index);
 
 void free_tensor(tensor* a);
 
@@ -122,5 +119,6 @@ void scal_tensor_mul(tensor* a, tensor* b);
 void print_tensor_values(tensor* a);
 
 void init_empty_tensor(tensor* a);
+
 
 #endif

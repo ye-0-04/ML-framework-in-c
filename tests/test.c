@@ -1,47 +1,80 @@
-
-
 #include <stdio.h>
 #include <stdint.h>
+#include <time.h>
+
+#include <immintrin.h>
 
 #include "../include/neural.h"
 #include "../include/tensors.h"
 #include "../include/models.h"
+
+tensor* add_tensor_2(tensor* a, tensor* b, bool con);
+ // Assuming this exists
+
 int main()
 {
     printf("hello\n");
-    int shape[] = {4,3};
-
-    neural_network net = create_net(shape , 3 , 2);
+    int shape[] = {1, 10000, 10000};
     
-    int s[] = {1,3,1};
-    tensor* input = create_tensor(s, 3);
-    input->data[0] = 5.6;
-    input->data[1] = 9.6;
-    input->data[2] = 7.8;
-
+    // First test: add_tensor_2
+    tensor* a1 = create_tensor(shape, 3);
+    tensor* b1 = create_tensor(shape, 3);
     
-    tensor* target = create_tensor(s, 3);
-    target->data[0] = 1.0;
-    target->data[1] = 1.0;
-    target->data[2] = 1.0;
-    FILE *f = fopen("model.bin", "wb");
-    save_model(&net, "model.bin");
-    neural_network net_v2;
-    load_model(&net_v2, "model.bin");
-    // for (int epoch = 0; epoch < 100000; epoch++)
-    // {
-        
-        
-    //     forward_pass(&net, input);
-    //     backprop_v2(&net, target, 0.0001);
-    //     for (int i = 0; i < 3; i++)
-    //     {
-    //         printf("%f,", get_tensor_val(&net.layers[net.size-1].output, i));
-    //     }
-    //     printf("\n");
-    // }
+    struct timespec start1, end1;
+    clock_gettime(CLOCK_MONOTONIC, &start1);
+    
+    tensor* c1 = add_tensor_2(a1, b1, true);
+    
+    clock_gettime(CLOCK_MONOTONIC, &end1);
+    double time1 = (end1.tv_sec - start1.tv_sec) + 
+                   (end1.tv_nsec - start1.tv_nsec) / 1e9;
+    
+    free_tensor(c1);
 
     
+    // Second test: add_tensor
+    tensor* a2 = create_tensor(shape, 3);
+    tensor* b2 = create_tensor(shape, 3);
+    
+    struct timespec start2, end2;
+    clock_gettime(CLOCK_MONOTONIC, &start2);
+    
+    tensor* c2 = add_tensor(a2, b2, true);
+    
+    clock_gettime(CLOCK_MONOTONIC, &end2);
+    double time2 = (end2.tv_sec - start2.tv_sec) + 
+                   (end2.tv_nsec - start2.tv_nsec) / 1e9;
+    
+    free_tensor(c2);
 
+    
+    // Print results
+    printf("add_tensor_2 time: %.6f seconds\n", time1);
+    printf("add_tensor time:    %.6f seconds\n", time2);
+    printf("Difference:         %.6f seconds\n", time1 - time2);
+    printf("Speedup ratio:       %.2fx\n", time2 / time1);
+    
     return 0;
+}
+tensor* add_tensor_2(tensor* a,tensor* b, bool con )
+{
+    if (comp_tensor_size(a , b)==1)
+    {
+        printf("tensors aren't equal in size");
+        
+    }
+    
+    tensor* result = create_tensor(a->shape, a->dims);
+    for (int i = 0; i <= a->size; i++)
+    {
+ 
+        result->data[i] = a->data[i] + b->data[i];
+    }
+    if (con) 
+    {
+        free_tensor(a);
+        free_tensor(b);
+    }
+    return result;
+
 }

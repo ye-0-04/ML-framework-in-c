@@ -6,6 +6,7 @@
 #include <math.h>
 #include <omp.h>
 #include <stdbool.h>
+#include <immintrin.h>
 
 #ifndef tensors_h
 #define tensors_h
@@ -59,7 +60,7 @@ tensor* create_tensor(int shape[], int dims)
     t->stride = (int*)malloc(dims * sizeof(int));
     if (!t->stride) { free(t); return NULL; }
     
-    t->data = (double*)malloc(size * sizeof(double));
+    t->data = (float*)malloc(size * sizeof(float));
     if (!t->data) { free(t->stride); free(t); return NULL; }
     
     t->shape = (int*)malloc(dims * sizeof(int));
@@ -89,18 +90,21 @@ tensor* add_tensor(tensor* a,tensor* b, bool con )
     }
     
     tensor* result = create_tensor(a->shape, a->dims);
-    for (int i = 0; i < a->size; i++ )
+    #pragma omp parallel for
+    for (int i = 0; i <= a->size; i++)
     {
+ 
         result->data[i] = a->data[i] + b->data[i];
     }
     if (con) 
     {
         free_tensor(a);
-         free_tensor(b);
+        free_tensor(b);
     }
     return result;
 
 }
+
 
 tensor* tensor_sub(tensor* a,tensor *b)
 {
@@ -212,7 +216,7 @@ tensor* tensor_matmul(tensor* a, tensor* b)
         {
             for (int j = 0; j < N; j++)
             {
-                double sum = 0.0;
+                float sum = 0.0;
 
                 for (int k = 0; k < K; k++)
                 {
@@ -242,7 +246,7 @@ tensor* tensor_matmul(tensor* a, tensor* b)
     return c;
 }
 
-tensor* tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double))
+tensor* tensor_apply_broadcast(tensor* a, tensor* b, float (*op)(float, float))
 {
     if (!broadcast_compatible(a, b))
     {
@@ -291,25 +295,25 @@ tensor load_tensor(FILE *f)
 
     t.shape = malloc(sizeof(int) * t.dims);
     t.stride = malloc(sizeof(int) * t.dims);
-    t.data = malloc(sizeof(double) * t.size);
+    t.data = malloc(sizeof(float) * t.size);
 
 
     fread(t.shape, sizeof(int), t.dims, f);
     fread(t.stride, sizeof(int), t.dims, f);
-    fread(t.data, sizeof(double), t.size, f);
+    fread(t.data, sizeof(float), t.size, f);
 
     return t;
 }
 
-double tensor_sum(tensor* a)
+float tensor_sum(tensor* a)
 {
     if (a == NULL)
     {
         printf("NULL tensor\n");
         return 1;
     }
-    #pragma omp parallel for reduction(+:sum)
-    double sum = 0;
+    
+    float sum = 0;
     for (int i = 0; i < a->size; i++)
     {
         if (isnan(a->data[i]) || isinf(a->data[i]))
@@ -321,15 +325,15 @@ double tensor_sum(tensor* a)
     return sum;
 }
 
-double tensor_get_max(tensor *a)
+float tensor_get_max(tensor *a)
 {
     if (a == NULL)
     {
         printf("NULL tensor\n");
         return 1;
     }
-    #pragma omp parallel for reduction(max:maxval)
-    double max = a->data[0];
+    
+    float max = a->data[0];
     for (int i = 0; i < a->size; i++)
     {
         if (isnan(a->data[i]) || isinf(a->data[i]))
@@ -341,15 +345,15 @@ double tensor_get_max(tensor *a)
     return max;
 }
 
-double tensor_get_min(tensor* a)
+float tensor_get_min(tensor* a)
 {
     if (a == NULL)
     {
         printf("NULL tensor\n");
         return 1;
     }
-    #pragma omp parallel for reduction(min:minval)
-    double min = a->data[0];
+    
+    float min = a->data[0];
     for (int i = 0; i < a->size; i++)
     {
         if (isnan(a->data[i]) || isinf(a->data[i]))
@@ -361,26 +365,26 @@ double tensor_get_min(tensor* a)
     return min;
 }
 
-double tensor_get_mean(tensor* a)
+float tensor_get_mean(tensor* a)
 {
     if (a == NULL)
     {
         printf("NULL tensor\n");
         return 1;
     }
-    double sum = tensor_sum(a);
+    float sum = tensor_sum(a);
     return (sum / a->size);
 
 }
-double tensor_argmax(tensor* a)
+int tensor_argmax(tensor* a)
 {
     if (a == NULL)
     {
         printf("NULL tensor\n");
         return 1;
     }
-    #pragma omp parallel for reduction(max:maxval)
-    double max = a->data[0];
+    
+    float max = a->data[0];
     int argmax = 0;
     for (int i = 0; i < a->size; i++)
     {
@@ -388,20 +392,25 @@ double tensor_argmax(tensor* a)
         {
             continue;
         }
-        if (a->data[i] > max) argmax = i;
+        if (a->data[i] > max) 
+        {
+            argmax = i;
+            max = a->data[i];
+
+        }
     }
     return argmax;
 }
 
-double tensor_argmin(tensor* a)
+int tensor_argmin(tensor* a)
 {
     if (a == NULL)
     {
         printf("NULL tensor\n");
         return 1;
     }
-    #pragma omp parallel for reduction(max:maxval)
-    double min = a->data[0];
+    
+    float min = a->data[0];
     int argmin = 0;
     for (int i = 0; i < a->size; i++)
     {
@@ -409,26 +418,31 @@ double tensor_argmin(tensor* a)
         {
             continue;
         }
-        if (a->data[i] < min) argmin = i;
+        if (a->data[i] < min)
+        {
+            argmin = i;
+            min = a->data[i];
+
+        }
     }
     return argmin;
 }
 
-double add(double x, double y) {return x + y;}
+float add(float x, float y) {return x + y;}
 
-double sub(double x, double y) {return x - y;}
+float sub(float x, float y) {return x - y;}
 
-double mul(double x, double y) {return x * y;}
+float mul(float x, float y) {return x * y;}
 
-double div_2(double x, double y) {return x / y;}
+float div_2(float x, float y) {return x / y;}
 
-double mean_squared_error(double true_val[],int true_val_size, double predictions[], int predictions_size)
+float mean_squared_error(float true_val[],int true_val_size, float predictions[], int predictions_size)
 {
 
 
-    double squared_diff = 0.0;
-    double sum = 0.0;
-    double error = 0.0;
+    float squared_diff = 0.0;
+    float sum = 0.0;
+    float error = 0.0;
     for (int i = 0; i < true_val_size; i++)
     {
         error = true_val[i] - predictions[i];
@@ -438,11 +452,11 @@ double mean_squared_error(double true_val[],int true_val_size, double prediction
     return sum;
 }
 
-double entropy(double pred[],int size)
+float entropy(float pred[],int size)
 {
     
-    double sum = 0.0;
-    double x = 0;
+    float sum = 0.0;
+    float x = 0;
     for (int i = 0; i < size; i++)
     {
         sum += pred[i] * log(pred[i]);
@@ -451,7 +465,7 @@ double entropy(double pred[],int size)
     return (sum < 0) ? (sum * -1) : sum;
 }
 
-const double get_tensor_val(tensor* a, int index)
+const float get_tensor_val(tensor* a, int index)
 {
     if (index >= a->size)
     {
@@ -524,7 +538,7 @@ int reshape(tensor* a,int shape[], int dims)
 int tensor_argmax_index(tensor *t)
 {
     int idx = 0;
-    double max = t->data[0];
+    float max = t->data[0];
 
     for (int i = 1; i < t->size; i++)
     {
@@ -595,9 +609,10 @@ void free_tensor(tensor* a)
     free(a->shape);
     free(a->stride);
     free(a->data);
+    free(a);
 }
 
-void set_tensor_val(tensor* a, double val, int index)
+void set_tensor_val(tensor* a, float val, int index)
 {
     if (index > a->size)
     {
@@ -697,7 +712,7 @@ void scal_pow(tensor*a, int b)
     }
 }
 
- void scal_add(tensor* a , double b)
+ void scal_add(tensor* a , float b)
 {
     for (int i = 0; i < a->size; i++)
     {
@@ -706,7 +721,7 @@ void scal_pow(tensor*a, int b)
 
 }
 
-void scal_mul(tensor* a , double b)
+void scal_mul(tensor* a , float b)
 {
     for (int i = 0; i < a->size; i++)
     {
@@ -715,7 +730,7 @@ void scal_mul(tensor* a , double b)
     
 }
 
-void fill(tensor* a , double b)
+void fill(tensor* a , float b)
 {
     
     for (int i = 0; i < a->size; i++)
@@ -730,7 +745,7 @@ void rand_fill(tensor* a)
     
     for (int i = 0; i < a->size; i++)
     {
-        a->data[i] = ((double)rand() / RAND_MAX - 0.5) * 0.01;
+        a->data[i] = ((float)rand() / RAND_MAX - 0.5) * 0.01;
     }
     
 }
@@ -781,14 +796,14 @@ void softmax(tensor *x)
 {
     int size = x->size;
 
-    double max = x->data[0];
+    float max = x->data[0];
     for (int i = 1; i < size; i++)
     {
         if (x->data[i] > max)
             max = x->data[i];
     }
 
-    double sum = 0.0;
+    float sum = 0.0;
     for (int i = 0; i < size; i++)
     {
         x->data[i] = exp(x->data[i] - max);
@@ -812,7 +827,7 @@ void clone(tensor* a, tensor* b)
     
     a->shape = (int*)malloc(a->dims * sizeof(int));
     a->stride = (int*)malloc(a->dims * sizeof(int));
-    a->data = (double*)malloc(a->size * sizeof(double));
+    a->data = (float*)malloc(a->size * sizeof(float));
     
     for (int i = 0; i < a->dims; i++) {
         a->shape[i] = b->shape[i];
@@ -834,5 +849,6 @@ void print_tensor_values(tensor* a)
     }
     printf("]\n");
 }
+
 
 
