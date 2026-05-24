@@ -50,6 +50,7 @@ neural_network create_net(int neural_shape[], int input, int size)
     nt.size = size;
     return nt;
 }
+
 void forward_pass(neural_network *nt, tensor* input)
 {   
     // printf("hello forward\n");
@@ -82,6 +83,7 @@ void forward_pass(neural_network *nt, tensor* input)
     }
 
 }
+
 void backprop(neural_network *nt, tensor* correct_output, double l_r)
 {
     // printf("hello_backprop\n");
@@ -130,6 +132,7 @@ void backprop(neural_network *nt, tensor* correct_output, double l_r)
         free_tensor(&weighted_tensor_transposed);
     }
 }
+
 void backprop_v2(neural_network *nt, tensor* correct_output, double l_r)
 {
     // printf("hello_backprop\n");

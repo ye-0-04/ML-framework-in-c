@@ -5,9 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/**
- * @brief Forward declaration of tensor structure
- */
+
 typedef struct tensor{
     int* shape;  //[[.....,row,col]
     int* stride; 
@@ -16,184 +14,113 @@ typedef struct tensor{
     int size;
 }tensor;
 
-/**
- * @brief Creates a new tensor with the specified shape and dimensions
- * @param shape Array specifying the size of each dimension
- * @param dims Number of dimensions
- * @return Pointer to the created tensor, or NULL on failure
- */
+
 tensor* create_tensor(int shape[], int dims);
 
-void init_empty_tensor(tensor* a);
-/**
- * @brief Performs element-wise addition of two tensors
- * @param a First tensor
- * @param b Second tensor
- * @return New tensor with the result, or NULL on failure
- */
+
 tensor* add_tensor(tensor* a, tensor* b, bool con);
 
-/**
- * @brief Performs element-wise subtraction of two tensors
- * @param a First tensor
- * @param b Second tensor
- * @return New tensor with the result, or NULL on failure
- */
+
 tensor* tensor_sub(tensor* a, tensor* b);
 
-/**
- * @brief Performs element-wise multiplication of two tensors
- * @param a First tensor
- * @param b Second tensor
- * @return New tensor with the result, or NULL on failure
- */
+
 tensor* tensor_mul(tensor* a, tensor* b);
 
-/**
- * @brief Performs element-wise division of two tensors
- * @param a First tensor (numerator)
- * @param b Second tensor (denominator)
- * @return New tensor with the result, or NULL on failure
- */
+
 tensor* tensor_div(tensor* a, tensor* b);
 
 tensor* tensor_matmul(tensor* a, tensor* b);
 
-/**
- * @brief Fills all elements of a tensor with a specified value
- * @param a Tensor to fill
- * @param b Value to fill with
- */
-void fill(tensor* a, double b);
+tensor* tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double));
 
-/**
- * @brief Fills all elements of a tensor with random double values
- * @param a Tensor to fill
- */
-void rand_fill(tensor* a);
+tensor load_tensor(FILE *f);
 
-/**
- * @brief Copies data from one tensor to another (both must have same size)
- * @param a Destination tensor
- * @param b Source tensor
- */
-int copy(tensor* a, tensor* b);
-
-/**
- * @brief Reshapes a tensor to new dimensions (total size must remain the same)
- * @param a Tensor to reshape
- * @param shape New shape array
- * @param dims New number of dimensions
- */
-int reshape(tensor* a, int shape[], int dims);
-
-/**
- * @brief Adds a scalar value to all elements of a tensor (in-place)
- * @param a Tensor to modify
- * @param b Scalar value to add
- */
-void scal_add(tensor* a, double b);
-void scal_pow(tensor*a, int b);
-/**
- * @brief Multiplies all elements of a tensor by a scalar value (in-place)
- * @param a Tensor to modify
- * @param b Scalar value to multiply by
- */
-void scal_mul(tensor* a, double b);
-
-/**
- * @brief Transposes a tensor by swapping two axes
- * @param a Tensor to transpose
- * @param swap_axes Array of 2 axis indices to swap
- * @return 0 on success, 1 on failure
- */
-void transpose(tensor* a, int swap_axes[]);
-
-/**
- * @brief Computes the sum of all elements in a tensor
- * @param a Tensor to sum
- * @return Sum of all elements, or 1 on error
- */
 double tensor_sum(tensor* a);
 
-/**
- * @brief Finds the maximum value in a tensor
- * @param a Tensor to search
- * @return Maximum value, or 1 on error
- */
+
 double tensor_get_max(tensor* a);
 
-/**
- * @brief Finds the minimum value in a tensor
- * @param a Tensor to search
- * @return Minimum value, or 1 on error
- */
+
 double tensor_get_min(tensor* a);
 
-/**
- * @brief Finds the index of the maximum value in a tensor
- * @param a Tensor to search
- * @return Index of maximum value, or 1 on error
- */
+
 double tensor_argmax(tensor* a);
 
-/**
- * @brief Finds the index of the minimum value in a tensor
- * @param a Tensor to search
- * @return Index of minimum value, or 1 on error
- */
+
 double tensor_argmin(tensor* a);
 
-/**
- * @brief Compares the size and dimensions of two tensors
- * @param a First tensor
- * @param b Second tensor
- * @return 0 if tensors have the same size, 1 otherwise
- */
-int comp_tensor_size(tensor* a, tensor* b);
+double add(double x, double y);
 
-void print_tensor_rec(tensor* a, int dim, int offset);
+double sub(double x, double y);
 
-/**
- * @brief Gets the value at a specific index in the tensor's flat data array
- * @param a Tensor to get value from
- * @param index Position in the flat data array
- * @return Value at the specified index
- */
+double mul(double x, double y);
+
+double div_2(double x, double y);
+
+double mean_squared_error(double true_val[],int true_val_size, double predictions[], int predictions_size);
+
+double entropy(double pred[],int size);
+
 const double get_tensor_val(tensor* a, int index);
 
-/**
- * @brief Sets the value at a specific index in the tensor's flat data array
- * @param a Tensor to set value in
- * @param val Value to set
- * @param index Position in the flat data array
- */
-void set_tensor_val(tensor* a, double val, int index);
 
-void free_tensor(tensor* a);
+int copy(tensor* a, tensor* b);
+
+
+int reshape(tensor* a, int shape[], int dims);
+
+int comp_tensor_size(tensor* a, tensor* b);
+
+int broadcast_compatible(tensor* a, tensor* b);
+
+int tensor_argmax_index(tensor *t);
+
 const int get_tensor_size(tensor* a);
 
 const int get_tensor_dims(tensor* a);
 
 const int* get_tensor_shape(tensor* a);
+
 const int* get_tensor_stride(tensor* a);
-int broadcast_compatible(tensor* a, tensor* b);
-tensor* tensor_apply_broadcast(tensor* a, tensor* b, double (*op)(double, double));
-double add(double x, double y);
-double sub(double x, double y);
-double mul(double x, double y);
-double div_2(double x, double y);
+
+
+void fill(tensor* a, double b);
+
+
+void rand_fill(tensor* a);
+
+void scal_add(tensor* a, double b);
+
+void scal_pow(tensor*a, int b);
+
+
+void scal_mul(tensor* a, double b);
+
+
+void transpose(tensor* a, int swap_axes[]);
+
+void print_tensor_rec(tensor* a, int dim, int offset);
+
+void set_tensor_val(tensor* a, double val, int index);
+
+void free_tensor(tensor* a);
+
 void reLu(tensor*  x);
+
 void sigmoid(tensor* x);
+
 void softmax(tensor *x);
-double mean_squared_error(double true_val[],int true_val_size, double predictions[], int predictions_size);
-double entropy(double pred[],int size);
+
 void clone(tensor* a, tensor* b);
+
 void scal_tensor_add(tensor* a, tensor* b);
+
 void scal_tensor_sub(tensor* a, tensor* b);
+
 void scal_tensor_mul(tensor* a, tensor* b);
+
 void print_tensor_values(tensor* a);
 
-tensor load_tensor(FILE *f);
-int tensor_argmax_index(tensor *t);
+void init_empty_tensor(tensor* a);
+
 #endif

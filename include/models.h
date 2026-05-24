@@ -6,5 +6,6 @@
 
 
 void save_model(neural_network *nt, const char *filename);
+
 void load_model(neural_network *nt, const char *filename);
 #endif
