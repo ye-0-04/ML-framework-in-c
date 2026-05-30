@@ -1,0 +1,5 @@
+gcc test.c ../src/tensors.c ../src/neural.c ../src/models.c  -o tes.exe -I../include
+
+gcc tensors.c ../src/tensors.c ../src/neural.c ../src/models.c  -o tes.exe -I../include
+
+-fopenmp

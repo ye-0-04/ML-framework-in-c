@@ -13,6 +13,8 @@
 
 
 #include "../include/tensors.h"
+
+#define BS 32
 #endif
 /**
  * @brief Tensor structure representing a multi-dimensional array
@@ -90,7 +92,7 @@ tensor* add_tensor(tensor* a,tensor* b, bool con )
     }
     
     tensor* result = create_tensor(a->shape, a->dims);
-    #pragma omp parallel for
+    
     for (int i = 0; i <= a->size; i++)
     {
  
@@ -376,6 +378,53 @@ float tensor_get_mean(tensor* a)
     return (sum / a->size);
 
 }
+
+float mean_squared_error(float true_val[],int true_val_size, float predictions[], int predictions_size)
+{
+
+
+    float squared_diff = 0.0;
+    float sum = 0.0;
+    float error = 0.0;
+    for (int i = 0; i < true_val_size; i++)
+    {
+        error = true_val[i] - predictions[i];
+        error = error * error;
+        sum += error / true_val_size;
+    }
+    return sum;
+}
+
+float entropy(float pred[],int size)
+{
+    
+    float sum = 0.0;
+    float x = 0;
+    for (int i = 0; i < size; i++)
+    {
+        sum += pred[i] * log(pred[i]);
+    }
+    if (sum < 0) sum *= -1;
+    return (sum < 0) ? (sum * -1) : sum;
+}
+
+const float get_tensor_val(tensor* a, int index)
+{
+    if (index >= a->size)
+    {
+        printf("index out of bounds\n");
+    }
+    return a->data[index];
+}
+
+float add(float x, float y) {return x + y;}
+
+float sub(float x, float y) {return x - y;}
+
+float mul(float x, float y) {return x * y;}
+
+float div_2(float x, float y) {return x / y;}
+
 int tensor_argmax(tensor* a)
 {
     if (a == NULL)
@@ -427,53 +476,6 @@ int tensor_argmin(tensor* a)
     }
     return argmin;
 }
-
-float add(float x, float y) {return x + y;}
-
-float sub(float x, float y) {return x - y;}
-
-float mul(float x, float y) {return x * y;}
-
-float div_2(float x, float y) {return x / y;}
-
-float mean_squared_error(float true_val[],int true_val_size, float predictions[], int predictions_size)
-{
-
-
-    float squared_diff = 0.0;
-    float sum = 0.0;
-    float error = 0.0;
-    for (int i = 0; i < true_val_size; i++)
-    {
-        error = true_val[i] - predictions[i];
-        error = error * error;
-        sum += error / true_val_size;
-    }
-    return sum;
-}
-
-float entropy(float pred[],int size)
-{
-    
-    float sum = 0.0;
-    float x = 0;
-    for (int i = 0; i < size; i++)
-    {
-        sum += pred[i] * log(pred[i]);
-    }
-    if (sum < 0) sum *= -1;
-    return (sum < 0) ? (sum * -1) : sum;
-}
-
-const float get_tensor_val(tensor* a, int index)
-{
-    if (index >= a->size)
-    {
-        printf("index out of bounds\n");
-    }
-    return a->data[index];
-}
-
 int comp_tensor_size(tensor* a, tensor *b)
 {
     if (a->dims != b->dims)
@@ -848,6 +850,84 @@ void print_tensor_values(tensor* a)
         printf("%f,", get_tensor_val(a, i));
     }
     printf("]\n");
+}
+
+
+// Version 2 of tensors operations designed for optimizarions
+// Less memory allocations inside the function
+// Kernal fusion
+
+
+void tensor_matmul_V2(tensor* output, tensor* a, tensor* b)
+{
+    if (a->dims != b->dims)
+    {
+        printf("dims mismatch\n");
+        return;
+    }
+
+    int d = a->dims;
+
+    int M = a->shape[d - 2];
+    int K = a->shape[d - 1];
+    int N = b->shape[d - 1];
+
+    if (b->shape[d - 2] != K)
+    {
+        printf("inner dims mismatch\n");
+        return;
+    }
+
+    int batch_size = 1;
+    for (int i = 0; i < d - 2; i++)
+        batch_size *= a->shape[i];
+
+    #pragma omp parallel for
+    for (int bidx = 0; bidx < batch_size; bidx++)
+    {
+        for (int ii = 0; ii < M; ii += BS)
+        {
+            for (int jj = 0; jj < N; jj += BS)
+            {
+                int batch_offset_a = bidx * a->stride[d - 3];
+                int batch_offset_b = bidx * b->stride[d - 3];
+                int batch_offset_c = bidx * output->stride[d - 3];
+
+                for (int kk = 0; kk < K; kk += BS)
+                {
+                    for (int i = ii; i < ii + BS && i < M; i++)
+                    {
+                        for (int j = jj; j < jj + BS && j < N; j++)
+                        {
+                            float sum = 0.0f;
+
+                            for (int k = kk; k < kk + BS && k < K; k++)
+                            {
+                                int a_idx =
+                                    batch_offset_a +
+                                    i * a->stride[d - 2] +
+                                    k * a->stride[d - 1];
+
+                                int b_idx =
+                                    batch_offset_b +
+                                    k * b->stride[d - 2] +
+                                    j * b->stride[d - 1];
+
+                                sum += a->data[a_idx] * b->data[b_idx];
+                            }
+
+                            int c_idx =
+                                batch_offset_c +
+                                i * output->stride[d - 2] +
+                                j * output->stride[d - 1];
+
+                            output->data[c_idx] = sum;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 

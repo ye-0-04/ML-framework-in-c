@@ -1,0 +1,11 @@
+Optimizations Roadmap
+
+1)Correctness
+
+2)cache misses
+
+3)manual AVX intrinsics
+
+4)Openmp Multithreading
+
+5)MicroKernals

@@ -120,5 +120,5 @@ void print_tensor_values(tensor* a);
 
 void init_empty_tensor(tensor* a);
 
-
+void tensor_matmul_V2(tensor* output, tensor* a, tensor* b);
 #endif
