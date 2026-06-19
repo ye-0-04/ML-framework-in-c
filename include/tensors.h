@@ -120,10 +120,8 @@ void scal_tensor_mul(tensor* a, tensor* b);
 void print_tensor_values(tensor* a);
 
 void init_empty_tensor(tensor* a);
-
-void tensor_matmul_V2(tensor* output, tensor* a, tensor* b);
-
-void tensor_matmul_V2_simd_packed(tensor* output, tensor* a, tensor* b);
-
-void tensor_matmul_V2_simd_packed_v2(tensor* output, tensor* a, tensor* b);
+void matmul_simd_omp_batch(tensor* output, tensor* a, tensor* b);
+void matmul_simd_avx2(tensor* output, tensor* a, tensor* b);
+void matmul_bare_hands_v2(tensor* output, tensor* a, tensor* b);
+void matmul_bare_hands(tensor* output, tensor* a, tensor* b);
 #endif

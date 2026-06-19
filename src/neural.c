@@ -198,3 +198,30 @@ void backprop_v2(neural_network *nt, tensor* correct_output, double l_r)
         free_tensor(&clone_input);
     }
 }
+
+//optimised version
+
+
+void forward_pass_v2(neural_network *nt, tensor* input)
+{
+    
+    clone(&nt->layers[0].input, input );
+    for (int i = 0; i < nt->size; i++)
+    {
+        matmul_bare_hands_v2(&nt->layers[i].output, &nt->layers[i].weights, &nt->layers[i].input);
+        scal_tensor_add(&nt->layers[i].output, &nt->layers[i].bias);
+
+        if (i == nt->size - 1)
+        {
+            softmax(&nt->layers[nt->size-1].output);
+        }
+        else
+        {
+            reLu(&nt->layers[i].output);
+            
+            clone(&nt->layers[i+1].input, &nt->layers[i].output);
+        }
+    }
+
+
+}

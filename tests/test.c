@@ -10,73 +10,94 @@
 #include "../include/tensors.h"
 #include "../include/models.h"
 
-tensor* add_tensor_2(tensor* a, tensor* b, bool con);
- // Assuming this exists
 
+ // Assuming this exists
+static double now_seconds()
+{
+    static LARGE_INTEGER freq;
+    static int init = 0;
+
+    if (!init)
+    {
+        QueryPerformanceFrequency(&freq);
+        init = 1;
+    }
+
+    LARGE_INTEGER t;
+    QueryPerformanceCounter(&t);
+
+    return (double)t.QuadPart / (double)freq.QuadPart;
+}
+void reset_network(neural_network* nt)
+{
+    for (int i = 0; i < nt->size; i++)
+    {
+        fill(&nt->layers[i].output, 0.0f);
+        fill(&nt->layers[i].input, 0.0f);
+        fill(&nt->layers[i].gradient, 0.0f);
+    }
+}
+void benchmark_forward(const char* name,
+                       void (*fn)(neural_network*, tensor*),
+                       neural_network* net,
+                       tensor* input,
+                       int runs)
+{
+    double total = 0.0;
+
+    /* warmup */
+    fn(net, input);
+
+    for (int i = 0; i < runs; i++)
+    {
+        reset_network(net);
+
+        double start = now_seconds();
+
+        fn(net, input);
+
+        double end = now_seconds();
+
+        double dt = end - start;
+        total += dt;
+
+        printf("%s run %d: %.6f sec\n", name, i, dt);
+    }
+
+    printf("%s average: %.6f sec\n\n", name, total / runs);
+}
 int main()
 {
-    printf("hello\n");
-    int shape[] = {1, 10000, 10000};
-    
-    // First test: add_tensor_2
-    tensor* a1 = create_tensor(shape, 3);
-    tensor* b1 = create_tensor(shape, 3);
-    
-    struct timespec start1, end1;
-    clock_gettime(CLOCK_MONOTONIC, &start1);
-    
-    tensor* c1 = add_tensor_2(a1, b1, true);
-    
-    clock_gettime(CLOCK_MONOTONIC, &end1);
-    double time1 = (end1.tv_sec - start1.tv_sec) + 
-                   (end1.tv_nsec - start1.tv_nsec) / 1e9;
-    
-    free_tensor(c1);
+    int shape[] = {3, 3, 3, 3};
+    int size = 4;
 
-    
-    // Second test: add_tensor
-    tensor* a2 = create_tensor(shape, 3);
-    tensor* b2 = create_tensor(shape, 3);
-    
-    struct timespec start2, end2;
-    clock_gettime(CLOCK_MONOTONIC, &start2);
-    
-    tensor* c2 = add_tensor(a2, b2, true);
-    
-    clock_gettime(CLOCK_MONOTONIC, &end2);
-    double time2 = (end2.tv_sec - start2.tv_sec) + 
-                   (end2.tv_nsec - start2.tv_nsec) / 1e9;
-    
-    free_tensor(c2);
+    int shape_tensor[] = {1, 1, 3};
+    int size_tensor = 3;
 
-    
-    // Print results
-    printf("add_tensor_2 time: %.6f seconds\n", time1);
-    printf("add_tensor time:    %.6f seconds\n", time2);
-    printf("Difference:         %.6f seconds\n", time1 - time2);
-    printf("Speedup ratio:       %.2fx\n", time2 / time1);
-    
+    tensor* in1 = create_tensor(shape_tensor, size_tensor);
+    tensor* in2 = create_tensor(shape_tensor, size_tensor);
+
+    fill(in1, 4.0f);
+    fill(in2, 4.0f);
+
+    neural_network nt1 = create_net(shape, 3, 4);
+    neural_network nt2 = create_net(shape, 3, 4);
+
+    int runs = 10;
+
+    printf("Benchmarking forward_pass...\n");
+    benchmark_forward("forward_pass",
+                      forward_pass,
+                      &nt1,
+                      in1,
+                      runs);
+
+    printf("Benchmarking forward_pass_v2...\n");
+    benchmark_forward("forward_pass_v2",
+                      forward_pass_v2,
+                      &nt2,
+                      in2,
+                      runs);
+
     return 0;
-}
-tensor* add_tensor_2(tensor* a,tensor* b, bool con )
-{
-    if (comp_tensor_size(a , b)==1)
-    {
-        printf("tensors aren't equal in size");
-        
-    }
-    
-    tensor* result = create_tensor(a->shape, a->dims);
-    for (int i = 0; i <= a->size; i++)
-    {
- 
-        result->data[i] = a->data[i] + b->data[i];
-    }
-    if (con) 
-    {
-        free_tensor(a);
-        free_tensor(b);
-    }
-    return result;
-
 }

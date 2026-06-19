@@ -192,7 +192,7 @@ tensor* tensor_matmul(tensor* a, tensor* b)
     }
 
     
-    int shape[d];
+    int shape[] = {1 , 1, 1};
     for (int i = 0; i < d - 2; i++)
         shape[i] = a->shape[i];
 
@@ -859,278 +859,10 @@ void print_tensor_values(tensor* a)
 // Kernal fusion
 
 
-void tensor_matmul_V2(tensor* output, tensor* a, tensor* b)
-{
-    // ... validation ...
-    
-    int d = a->dims;
-    int M = a->shape[d-2], K = a->shape[d-1], N = b->shape[d-1];
-    
-    int batch_size = 1;
-    for (int i = 0; i < d-2; i++) batch_size *= a->shape[i];
-    
-    // Initialize output to zero
-    for (int i = 0; i < output->size; i++) output->data[i] = 0.0f;
-    
-    
-    for (int bidx = 0; bidx < batch_size; bidx++)
-    {
-        int batch_offset_a = bidx * a->stride[d-3];
-        int batch_offset_b = bidx * b->stride[d-3];
-        int batch_offset_c = bidx * output->stride[d-3];
-        
-        // Now IKJ order within each batch
-        for (int i = 0; i < M; i++)
-        {
-            for (int k = 0; k < K; k++)
-            {
-                int a_idx = batch_offset_a + i * a->stride[d-2] + k * a->stride[d-1];
-                float a_val = a->data[a_idx];
-                
-                for (int j = 0; j < N; j++)
-                {
-                    int b_idx = batch_offset_b + k * b->stride[d-2] + j * b->stride[d-1];
-                    int c_idx = batch_offset_c + i * output->stride[d-2] + j * output->stride[d-1];
-                    
-                    output->data[c_idx] += a_val * b->data[b_idx];
-                }
-            }
-        }
-    }
-}
 
-
-void tensor_matmul_V2_simd_packed(tensor* output, tensor* a, tensor* b)
-{
-    // Validation
-    if (a->dims != b->dims)
-    {
-        printf("dims mismatch\n");
-        return;
-    }
-
-    int d = a->dims;
-    int M = a->shape[d-2];
-    int K = a->shape[d-1];
-    int N = b->shape[d-1];
-
-    if (b->shape[d-2] != K)
-    {
-        printf("inner dims mismatch\n");
-        return;
-    }
-
-    // Calculate batch size
-    int batch_size = 1;
-    for (int i = 0; i < d-2; i++)
-        batch_size *= a->shape[i];
-
-    // Initialize output to zero
-    for (int i = 0; i < output->size; i++)
-        output->data[i] = 0.0f;
-
-    // SIMD parameters
-    const int MR = 6;
-    const int NR = 8;
-    const int KR = 128;
-
-    // Allocate packed buffer
-    float* packed_b = (float*)_aligned_malloc(K * N * sizeof(float), 32);
-    if (!packed_b) {
-        printf("_aligned_malloc failed\n");
-        return;
-    }
-    
-    // Main batch loop
-    for (int bidx = 0; bidx < batch_size; bidx++)
-    {
-        int batch_offset_a = bidx * a->stride[d-3];
-        int batch_offset_b = bidx * b->stride[d-3];
-        int batch_offset_c = bidx * output->stride[d-3];
-        
-        for (int k = 0; k < K; k += KR)
-        {
-            int k_end = (k + KR < K) ? k + KR : K;
-            int k_size = k_end - k;
-            
-            for (int j = 0; j < N; j += NR)
-            {
-                int j_end = (j + NR < N) ? j + NR : N;
-                int j_size = j_end - j;
-                
-                // Pack B block
-                for (int kk = 0; kk < k_size; kk++)
-                {
-                    for (int jj = 0; jj < j_size; jj++)
-                    {
-                        int b_idx = batch_offset_b + (k+kk) * b->stride[d-2] + (j+jj) * b->stride[d-1];
-                        packed_b[kk * j_size + jj] = b->data[b_idx];
-                    }
-                }
-                
-                // Main computation
-                for (int i = 0; i < M; i += MR)
-                {
-                    int i_end = (i + MR < M) ? i + MR : M;
-                    int i_size = i_end - i;
-                    
-                    __m256 acc[6];
-                    for (int ii = 0; ii < i_size; ii++)
-                        acc[ii] = _mm256_setzero_ps();
-                    
-                    for (int kk = 0; kk < k_size; kk++)
-                    {
-                        for (int ii = 0; ii < i_size; ii++)
-                        {
-                            int a_idx = batch_offset_a + (i+ii) * a->stride[d-2] + (k+kk) * a->stride[d-1];
-                            __m256 a_broad = _mm256_broadcast_ss(&a->data[a_idx]);
-                            
-                            __m256 b_vec = _mm256_load_ps(&packed_b[kk * j_size]);
-                            
-                            acc[ii] = _mm256_fmadd_ps(a_broad, b_vec, acc[ii]);
-                        }
-                    }
-                    
-                    // Store results
-                    for (int ii = 0; ii < i_size; ii++)
-                    {
-                        int c_idx = batch_offset_c + (i+ii) * output->stride[d-2] + j * output->stride[d-1];
-                        _mm256_store_ps(&output->data[c_idx], acc[ii]);
-                    }
-                }
-            }
-        }
-    }
-    
-    _aligned_free(packed_b);
-}
-void tensor_matmul_V2_simd_packed_v2(tensor* output, tensor* a, tensor* b)
-{
-    // Validation
-    if (a->dims != b->dims)
-    {
-        printf("dims mismatch\n");
-        return;
-    }
-
-    int d = a->dims;
-    int M = a->shape[d-2];
-    int K = a->shape[d-1];
-    int N = b->shape[d-1];
-
-    if (b->shape[d-2] != K)
-    {
-        printf("inner dims mismatch\n");
-        return;
-    }
-
-    // Calculate batch size
-    int batch_size = 1;
-    for (int i = 0; i < d-2; i++)
-        batch_size *= a->shape[i];
-
-    // Initialize output to zero
-    for (int i = 0; i < output->size; i++)
-        output->data[i] = 0.0f;
-
-    // SIMD parameters
-    const int MR = 6;
-    const int NR = 8;
-    const int KR = 128;
-
-    // Get number of threads
-    int num_threads = omp_get_max_threads();
-    
-    // Allocate buffer for each thread
-    float** thread_buffers = (float**)malloc(num_threads * sizeof(float*));
-    if (!thread_buffers) {
-        printf("Failed to allocate thread buffer array\n");
-        return;
-    }
-    
-    for (int t = 0; t < num_threads; t++) {
-        thread_buffers[t] = (float*)_aligned_malloc(K * N * sizeof(float), 32);
-        if (!thread_buffers[t]) {
-            printf("Failed to allocate buffer for thread %d\n", t);
-            // Cleanup already allocated buffers
-            for (int tt = 0; tt < t; tt++)
-                _aligned_free(thread_buffers[tt]);
-            free(thread_buffers);
-            return;
-        }
-    }
-    
-    // Main batch loop with OpenMP
-    #pragma omp parallel for
-    for (int bidx = 0; bidx < batch_size; bidx++)
-    {
-        int tid = omp_get_thread_num();
-        float* packed_b = thread_buffers[tid];
-        
-        int batch_offset_a = bidx * a->stride[d-3];
-        int batch_offset_b = bidx * b->stride[d-3];
-        int batch_offset_c = bidx * output->stride[d-3];
-        
-        for (int k = 0; k < K; k += KR)
-        {
-            int k_end = (k + KR < K) ? k + KR : K;
-            int k_size = k_end - k;
-            
-            for (int j = 0; j < N; j += NR)
-            {
-                int j_end = (j + NR < N) ? j + NR : N;
-                int j_size = j_end - j;
-                
-                // Pack B block into thread-local buffer
-                for (int kk = 0; kk < k_size; kk++)
-                {
-                    for (int jj = 0; jj < j_size; jj++)
-                    {
-                        int b_idx = batch_offset_b + (k+kk) * b->stride[d-2] + (j+jj) * b->stride[d-1];
-                        packed_b[kk * j_size + jj] = b->data[b_idx];
-                    }
-                }
-                
-                // Main computation with SIMD
-                for (int i = 0; i < M; i += MR)
-                {
-                    int i_end = (i + MR < M) ? i + MR : M;
-                    int i_size = i_end - i;
-                    
-                    __m256 acc[6];
-                    for (int ii = 0; ii < i_size; ii++)
-                        acc[ii] = _mm256_setzero_ps();
-                    
-                    for (int kk = 0; kk < k_size; kk++)
-                    {
-                        for (int ii = 0; ii < i_size; ii++)
-                        {
-                            int a_idx = batch_offset_a + (i+ii) * a->stride[d-2] + (k+kk) * a->stride[d-1];
-                            __m256 a_broad = _mm256_broadcast_ss(&a->data[a_idx]);
-                            __m256 b_vec = _mm256_load_ps(&packed_b[kk * j_size]);
-                            acc[ii] = _mm256_fmadd_ps(a_broad, b_vec, acc[ii]);
-                        }
-                    }
-                    
-                    // Store results
-                    for (int ii = 0; ii < i_size; ii++)
-                    {
-                        int c_idx = batch_offset_c + (i+ii) * output->stride[d-2] + j * output->stride[d-1];
-                        _mm256_store_ps(&output->data[c_idx], acc[ii]);
-                    }
-                }
-            }
-        }
-    }
-    
-    // Free all thread buffers
-    for (int t = 0; t < num_threads; t++)
-        _aligned_free(thread_buffers[t]);
-    free(thread_buffers);
-}
 void matmul_bare_hands(tensor* output, tensor* a, tensor* b)
 {
-
+    memset(output->data, 0.0, output->size * sizeof(float));
     int batches = 1;
     for (int i = 0; i < a->dims - 2; i++)
     {
@@ -1163,6 +895,195 @@ void matmul_bare_hands(tensor* output, tensor* a, tensor* b)
             }
         }
     }
+}
+
+void matmul_bare_hands_v2(tensor* output, tensor* a, tensor* b)
+{   
+    memset(output->data, 0.0, output->size * sizeof(float));
+    int batches = 1;
+
+    for (int i = 0; i < a->dims - 2; i++)
+        batches *= a->shape[i];
+
+    int M = a->shape[a->dims - 2];
+    int K = a->shape[a->dims - 1];
+    int N = b->shape[b->dims - 1];
+
+    int a_batch_stride = M * K;
+    int b_batch_stride = K * N;
+    int out_batch_stride = M * N;
+
+    for (int bb = 0; bb < batches; bb++)
+    {
+        int a_base = bb * a_batch_stride;
+        int b_base = bb * b_batch_stride;
+        int out_base = bb * out_batch_stride;
+
+        for (int i = 0; i < M; i++)
+        {
+            float* c_row =
+                &output->data[
+                    out_base +
+                    i * output->stride[output->dims - 2]
+                ];
+
+            float* a_row =
+                &a->data[
+                    a_base +
+                    i * a->stride[a->dims - 2]
+                ];
+
+            for (int k = 0; k < K; k++)
+            {
+                float a_val = a_row[k];
+
+                float* b_row =
+                    &b->data[
+                        b_base +
+                        k * b->stride[b->dims - 2]
+                    ];
+
+                for (int j = 0; j < N; j++)
+                {
+                    c_row[j] += a_val * b_row[j];
+                }
+            }
+        }
+    }
+}
 
 
+void matmul_simd_avx2(tensor* output, tensor* a, tensor* b)
+{   
+    memset(output->data, 0.0, output->size * sizeof(float));
+    int batches = 1;
+
+    for (int d = 0; d < a->dims - 2; d++)
+        batches *= a->shape[d];
+
+    const int M = a->shape[a->dims - 2];
+    const int K = a->shape[a->dims - 1];
+    const int N = b->shape[b->dims - 1];
+
+    const int a_batch_stride = M * K;
+    const int b_batch_stride = K * N;
+    const int out_batch_stride = M * N;
+
+    for (int bb = 0; bb < batches; bb++)
+    {
+        const int a_base = bb * a_batch_stride;
+        const int b_base = bb * b_batch_stride;
+        const int out_base = bb * out_batch_stride;
+
+        for (int i = 0; i < M; i++)
+        {
+            float* c_row =
+                output->data +
+                out_base +
+                i * output->stride[output->dims - 2];
+
+            float* a_row =
+                a->data +
+                a_base +
+                i * a->stride[a->dims - 2];
+
+            for (int k = 0; k < K; k++)
+            {
+                const float a_val = a_row[k];
+
+                const __m256 a_vec = _mm256_set1_ps(a_val);
+
+                float* b_row =
+                    b->data +
+                    b_base +
+                    k * b->stride[b->dims - 2];
+
+                int j = 0;
+
+                for (; j <= N - 8; j += 8)
+                {
+                    __m256 b_vec = _mm256_loadu_ps(b_row + j);
+                    __m256 c_vec = _mm256_loadu_ps(c_row + j);
+
+                    c_vec = _mm256_fmadd_ps(a_vec, b_vec, c_vec);
+
+                    _mm256_storeu_ps(c_row + j, c_vec);
+                }
+
+                for (; j < N; j++)
+                {
+                    c_row[j] += a_val * b_row[j];
+                }
+            }
+        }
+    }
+}
+void matmul_simd_omp_batch(tensor* output, tensor* a, tensor* b)
+{
+    memset(output->data, 0.0, output->size * sizeof(float));
+    int batches = 1;
+
+    for (int i = 0; i < a->dims - 2; i++)
+        batches *= a->shape[i];
+
+    int M = a->shape[a->dims - 2];
+    int K = a->shape[a->dims - 1];
+    int N = b->shape[b->dims - 1];
+
+    int a_batch_stride = M * K;
+    int b_batch_stride = K * N;
+    int out_batch_stride = M * N;
+
+    #pragma omp parallel for schedule(static)
+    for (int bb = 0; bb < batches; bb++)
+    {
+        int a_base   = bb * a_batch_stride;
+        int b_base   = bb * b_batch_stride;
+        int out_base = bb * out_batch_stride;
+
+        for (int i = 0; i < M; i++)
+        {
+            float* c_row =
+                &output->data[
+                    out_base +
+                    i * output->stride[output->dims - 2]
+                ];
+
+            float* a_row =
+                &a->data[
+                    a_base +
+                    i * a->stride[a->dims - 2]
+                ];
+
+            for (int k = 0; k < K; k++)
+            {
+                float a_val = a_row[k];
+
+                __m256 a_vec = _mm256_set1_ps(a_val);
+
+                float* b_row =
+                    &b->data[
+                        b_base +
+                        k * b->stride[b->dims - 2]
+                    ];
+
+                int j;
+
+                for (j = 0; j <= N - 8; j += 8)
+                {
+                    __m256 b_vec = _mm256_loadu_ps(b_row + j);
+                    __m256 c_vec = _mm256_loadu_ps(c_row + j);
+
+                    c_vec = _mm256_fmadd_ps(a_vec, b_vec, c_vec);
+
+                    _mm256_storeu_ps(c_row + j, c_vec);
+                }
+
+                for (; j < N; j++)
+                {
+                    c_row[j] += a_val * b_row[j];
+                }
+            }
+        }
+    }
 }

@@ -30,7 +30,7 @@ Phase 7
 2)Entropy  (Done)
 
 Phase 7
-1)back prop
+1)back prop (Done)
 
 
 
